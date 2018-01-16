@@ -12,7 +12,7 @@ var logger = new (winston.Logger)({
 });
 
 // --- Set Details Here --- //
-const config_file = 'marbles_local.json';						//set config file name
+const config_file = 'marbles_tc.json';							//set config file name
 const chaincode_id = 'marbles';									//set desired chaincode id to identify this chaincode
 const chaincode_ver = String(Date.now());						//unique-ish chaincode version
 const chaincode_args = ['12345'];								//any random number will do for Marbles

@@ -40,6 +40,12 @@ stages:
       #cf services | sed -n 's/.*\(${SERVICE_INSTANCE_NAME}\).*/\1/p'
 
       # -----------------------------------------------------------
+      # Install Things We Need
+      # -----------------------------------------------------------
+      echo "Insalling jq for json parsing"
+      sudo apt-get install jq
+
+      # -----------------------------------------------------------
       # Detect if there is already a service we should use - [ Optional ]
       # -----------------------------------------------------------
       printf "\n --- Detecting service options ---\n"
@@ -108,6 +114,45 @@ stages:
       cat ./config/temp.txt -b
       printf "\n --- testing marbles_tc.json --- \n"
       cat ./config/marbles_tc.json -b
+
+      echo "testing getting url from json"
+      cat ./config/marbles_tc.json | jq '.credentials[0]."x-api".url'
+      export HOST_NAME="$(cat ./config/marbles_tc.json | jq '.credentials[0]."x-api".url')"
+      export KEY="$(cat ./config/marbles_tc.json | jq '.credentials[0]."x-api".key')"
+      export SECRET="$(cat ./config/marbles_tc.json | jq '.credentials[0]."x-api".secret')"
+      echo "results hostname=$HOSTNAME, key=$KEY, secret=$SECRET"
+
+      echo "testing tar"
+      ls
+      tar cvf marbles.tar ./chaincode/src/marbles
+      ls
+
+      #export HOST_NAME=https://ibmblockchain-dev-starter.stage1.ng.bluemix.net
+      #export KEY=org1
+      #export SECRET=f5d8f3b809082375fdbc2414bb911bf33b8b97986144f0142c4ec5009cc36eb2
+
+      printf "\n\n --- more testing --- \n\n"
+
+      echo "now for install:"
+      curl -X POST \
+        $HOST_NAME/api/v1/networks/n66f63d34d69d4c5786334495ed82aa4d/chaincode/install \
+        -H 'Cache-Control: no-cache' \
+        -H 'content-type: multipart/form-data;' \
+        -u $KEY:$SECRET\
+        -F 'files[]=@./chaincode/src/marbles/lib.go' \
+        -F 'files[]=@./chaincode/src/marbles/marbles.go' \
+        -F 'files[]=@./chaincode/src/marbles/read_ledger.go' \
+        -F 'files[]=@./chaincode/src/marbles/write_ledger.go' \
+        -F chaincode_id=marbles \
+        -F chaincode_version=v4
+
+      echo "now for instantiate:"
+      curl -X POST \
+        $HOST_NAME/api/v1/networks/n66f63d34d69d4c5786334495ed82aa4d/channels/first/chaincode/instantiate \
+        -H 'Cache-Control: no-cache' \
+        -H 'Content-Type: application/json' \
+        -u $KEY:$SECRET\
+        -d '{"chaincode_id": "marbles","chaincode_version": "v4","chaincode_arguments": "[\"12345\"]"}'
 
       # -----------------------------------------------------------
       # 4. Push application (don't start yet, wait for binding)

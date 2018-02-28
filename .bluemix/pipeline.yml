@@ -28,21 +28,22 @@ stages:
     script: |
       #!/bin/bash
       export IBP_NAME="ibm-blockchain-5-dev"
-      export IBP_PLAN="ibm-blockchain-plan-v1-ga1-dev"
+      export IBP_PLAN="ibm-blockchain-plan-v1-starter-dev"
       export VCAP_KEY_NAME="marbles_tc_creds"
 
       # -----------------------------------------------------------
       # Test Code - ignore me
       # -----------------------------------------------------------
-      printf "\n --- Listing services for testing ---\n"
-      cf services
+      #printf "\n --- Listing services for testing ---\n"
+      #cf services
       #cf services | sed -n 's/.*\(ibm-blockchain-plan-v1-prod\).*/\1/p'
       #cf services | sed -n 's/.*\(${SERVICE_INSTANCE_NAME}\).*/\1/p'
 
       # -----------------------------------------------------------
       # Install Things We Need
       # -----------------------------------------------------------
-      echo "Insalling jq for json parsing"
+      printf "\n\nInstalling jq for json parsing\n"
+      sudo apt-get update -qq || true
       sudo apt-get install jq
 
       # -----------------------------------------------------------
@@ -71,7 +72,7 @@ stages:
       # -----------------------------------------------------------
       printf "\n --- Testing if the script has what it needs ---\n"
       export SCRIPT_ERROR="nope"
-       if [ "$IBP_NAME" == "" ]; then
+        if [ "$IBP_NAME" == "" ]; then
         echo "Error - bad script setup - IBP_NAME was not provided (IBM Blockchain service name)"
         export SCRIPT_ERROR="yep"
       fi
@@ -100,7 +101,7 @@ stages:
       # -----------------------------------------------------------
       # 2. Create a service instance (this is okay to run if the service name already exists as long as its the same typeof service)
       # -----------------------------------------------------------
-      printf "\n --- Creating an instance of the IBM Blockchain Platform service ---\n"
+      printf "\n --- Creating/checking an instance of the IBM Blockchain Platform service ---\n"
       cf create-service ${IBP_NAME} ${IBP_PLAN} ${SERVICE_INSTANCE_NAME}
       cf create-service-key ${SERVICE_INSTANCE_NAME} ${VCAP_KEY_NAME} -c '{"msp_id":"PeerOrg1"}'
 
@@ -110,35 +111,33 @@ stages:
       printf "\n --- Getting service credentials ---\n"
       cf service-key ${SERVICE_INSTANCE_NAME} ${VCAP_KEY_NAME} > ./config/temp.txt
       tail -n +2 ./config/temp.txt > ./config/marbles_tc.json
-      printf "\n --- testing temp.txt --- \n"
-      cat ./config/temp.txt -b
       printf "\n --- testing marbles_tc.json --- \n"
       cat ./config/marbles_tc.json -b
 
       echo "testing getting url from json"
-      cat ./config/marbles_tc.json | jq '.credentials[0]."x-api".url'
-      export HOST_NAME="$(cat ./config/marbles_tc.json | jq '.credentials[0]."x-api".url')"
-      export KEY="$(cat ./config/marbles_tc.json | jq '.credentials[0]."x-api".key')"
-      export SECRET="$(cat ./config/marbles_tc.json | jq '.credentials[0]."x-api".secret')"
-      echo "results hostname=$HOSTNAME, key=$KEY, secret=$SECRET"
+      cat ./config/marbles_tc.json | jq '.credentials[0].version'
+      cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"]'
+      cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].url'
+      export API_HOST="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].url')"
+      export API_KEY="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].key')"
+      export API_SECRET="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].secret')"
+      echo "results hostname=$HOSTNAME, key=$API_KEYKEY, secret=$API_SECRET"
 
       echo "testing tar"
-      ls
       tar cvf marbles.tar ./chaincode/src/marbles
-      ls
 
-      #export HOST_NAME=https://ibmblockchain-dev-starter.stage1.ng.bluemix.net
-      #export KEY=org1
-      #export SECRET=f5d8f3b809082375fdbc2414bb911bf33b8b97986144f0142c4ec5009cc36eb2
+      #export API_HOST=https://ibmblockchain-dev-starter.stage1.ng.bluemix.net
+      #export API_KEY=org1
+      #export API_SECRET=f5d8f3b809082375fdbc2414bb911bf33b8b97986144f0142c4ec5009cc36eb2
 
       printf "\n\n --- more testing --- \n\n"
 
       echo "now for install:"
       curl -X POST \
-        $HOST_NAME/api/v1/networks/n66f63d34d69d4c5786334495ed82aa4d/chaincode/install \
+        $API_HOST/api/v1/networks/n66f63d34d69d4c5786334495ed82aa4d/chaincode/install \
         -H 'Cache-Control: no-cache' \
         -H 'content-type: multipart/form-data;' \
-        -u $KEY:$SECRET\
+        -u $API_KEY:$API_SECRET\
         -F 'files[]=@./chaincode/src/marbles/lib.go' \
         -F 'files[]=@./chaincode/src/marbles/marbles.go' \
         -F 'files[]=@./chaincode/src/marbles/read_ledger.go' \
@@ -148,10 +147,10 @@ stages:
 
       echo "now for instantiate:"
       curl -X POST \
-        $HOST_NAME/api/v1/networks/n66f63d34d69d4c5786334495ed82aa4d/channels/first/chaincode/instantiate \
+        $API_HOST/api/v1/networks/n66f63d34d69d4c5786334495ed82aa4d/channels/first/chaincode/instantiate \
         -H 'Cache-Control: no-cache' \
         -H 'Content-Type: application/json' \
-        -u $KEY:$SECRET\
+        -u $API_KEY:$API_SECRET\
         -d '{"chaincode_id": "marbles","chaincode_version": "v4","chaincode_arguments": "[\"12345\"]"}'
 
       # -----------------------------------------------------------

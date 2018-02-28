@@ -30,6 +30,8 @@ stages:
     export IBP_NAME="ibm-blockchain-5-dev"
     export IBP_PLAN="ibm-blockchain-plan-v1-starter-dev"
     export VCAP_KEY_NAME="marbles_tc_creds"
+    export CHANNEL="first"                                #todo get from service creds
+    export NETWORK_ID="n66f63d34d69d4c5786334495ed82aa4d" #todo get from service creds
 
     # -----------------------------------------------------------
     # Test Code - ignore me
@@ -115,26 +117,22 @@ stages:
     cat ./config/marbles_tc.json -b
 
     echo "testing getting url from json"
-    cat ./config/marbles_tc.json | jq '.credentials[0].version'
-    cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"]'
-    cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].url' -r
+    #cat ./config/marbles_tc.json | jq '.credentials[0].version'
+    #cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"]'
+    #cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].url' -r
     export API_HOST="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].url' -r)"
     export API_KEY="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].key' -r)"
     export API_SECRET="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].secret' -r)"
-    echo "results api host=$API_HOST, key=$API_KEY, secret=$API_SECRET"
+    echo "JQ results: api host=$API_HOST, key=$API_KEY, secret=$API_SECRET"           #dsh to do, remove secret
 
-    echo "testing tar"
-    tar cvf marbles.tar ./chaincode/src/marbles
-
-    #export API_HOST=https://ibmblockchain-dev-starter.stage1.ng.bluemix.net
-    #export API_KEY=org1
-    #export API_SECRET=f5d8f3b809082375fdbc2414bb911bf33b8b97986144f0142c4ec5009cc36eb2
-
-    printf "\n\n --- more testing --- \n\n"
-
-    echo "Installing chaincode:"
+    # -----------------------------------------------------------
+    # 4. Install and instantiate the chaincode
+    # -----------------------------------------------------------
+    printf "\n\n --- Installing chaincode ---\n\n"
+    #echo "testing tar"
+    #tar cvf marbles.tar ./chaincode/src/marbles
     curl -X POST \
-      "$API_HOST/api/v1/networks/n66f63d34d69d4c5786334495ed82aa4d/chaincode/install" \
+      "$API_HOST/api/v1/networks/$NETWORK_ID/chaincode/install" \
       -H 'Cache-Control: no-cache' \
       -H 'content-type: multipart/form-data;' \
       -u $API_KEY:$API_SECRET\
@@ -143,42 +141,35 @@ stages:
       -F 'files[]=@./chaincode/src/marbles/read_ledger.go' \
       -F 'files[]=@./chaincode/src/marbles/write_ledger.go' \
       -F chaincode_id=marbles-sample \
-      -F chaincode_version=v6
+      -F chaincode_version=v6 \
+      | jq '.'
 
-    echo "Now we instantiate the chaincode:"
+    printf "\n\n --- Instantiating chaincode on channel $CHANNEL ---\n\n"
     curl -X POST \
-      "$API_HOST/api/v1/networks/n66f63d34d69d4c5786334495ed82aa4d/channels/first/chaincode/instantiate" \
+      "$API_HOST/api/v1/networks/$NETWORK_ID/channels/$CHANNEL/chaincode/instantiate" \
       -H 'Cache-Control: no-cache' \
       -H 'Content-Type: application/json' \
-      -u $API_KEY:$API_SECRET\
-      -d '{"chaincode_id": "marbles","chaincode_version": "v4","chaincode_arguments": "[\"12345\"]"}'
+      -u $API_KEY:$API_SECRET \
+      -d '{"chaincode_id": "marbles","chaincode_version": "v4","chaincode_arguments": "[\"12345\"]"}' \
+      | jq '.'
 
     # -----------------------------------------------------------
-    # 4. Push application (don't start yet, wait for binding)
+    # 5. Push application (don't start yet, wait for binding)
     # -----------------------------------------------------------
     printf "\n --- Creating the Marbles application ---\n"
     cf push $CF_APP --no-start
 
     # -----------------------------------------------------------
-    # 5. Bind application to the blockchain service
+    # 6. Bind application to the blockchain service
     # -----------------------------------------------------------
     printf "\n --- Binding the IBM Blockchain Platform service to Marbles ---\n"
     cf bind-service $CF_APP ${SERVICE_INSTANCE_NAME} -c "{\"permissions\":\"read-only\"}"
 
     # -----------------------------------------------------------
-    # 6. Start her up
+    # 7. Start her up
     # -----------------------------------------------------------
     printf "\n --- Starting Marbles ---\n"
     cf start $CF_APP
-
-    # -----------------------------------------------------------
-    # 7. Install and instantiate the chaincode (dsh disabled for now - todo bring it back)
-    # -----------------------------------------------------------
-    #printf "\n --- Setting up for deployment ---\n"
-    #export PATH=/opt/IBM/node-v6.7.0/bin:$PATH
-    #npm install
-    #printf "\n --- Deploying Chaincode ---\n"
-    #node ./scripts/deploy_chaincode.js || true
 
     # -----------------------------------------------------------
     # 8. Ping IBP that the application is alive  - [ Optional ]
@@ -189,3 +180,12 @@ stages:
     fi
 
     printf "\n\n --- We are done here. ---\n\n"
+
+       # -----------------------------------------------------------
+    # x. Install and instantiate the chaincode (dsh disabled for now)
+    # -----------------------------------------------------------
+    #printf "\n --- Setting up for deployment ---\n"
+    #export PATH=/opt/IBM/node-v6.7.0/bin:$PATH
+    #npm install
+    #printf "\n --- Deploying Chaincode ---\n"
+    #node ./scripts/deploy_chaincode.js || true

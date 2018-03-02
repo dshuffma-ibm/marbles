@@ -15,7 +15,7 @@ template:
     git url: >-
       [https://github.com/dshuffma-ibm/marbles](https://github.com/dshuffma-ibm/marbles)
     git branch: >-
-      [v4.48](https://github.com/dshuffma-ibm/marbles/tree/v4.0)
+      [v4.50](https://github.com/dshuffma-ibm/marbles/tree/v4.0)
 toolchain:
   name: 'marbles-tc-{{timestamp}}'
   template:

@@ -31,8 +31,8 @@ stages:
       export IBP_NAME="ibm-blockchain-5-dev"
       export IBP_PLAN="ibm-blockchain-plan-v1-starter-dev"
       export VCAP_KEY_NAME="marbles_tc_creds"
-      export CHANNEL="first"
-      export NETWORK_ID="n66f63d34d69d4c5786334495ed82aa4d" #todo get from service creds
+      export CHANNEL="defaultchannel"
+      export NETWORK_ID="n0cf9bf422fa542909a50dafaa91b1046" #todo get from service creds
 
       fail_message()
       {

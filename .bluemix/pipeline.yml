@@ -52,11 +52,11 @@ stages:
       update_status()
       {
         curl -X PUT \
-          "$API_HOST/api/v1/networks/$NETWORK_ID/sample/$CF_APP" \
+          "$API_HOST/api/v1/networks/$NETWORK_ID/sample/marbles" \
           -H 'Cache-Control: no-cache' \
           -H 'Content-Type: application/json' \
           -u $API_KEY:$API_SECRET \
-          -d '{"status": "'"$DEPLOY_STATUS"'","error": "'"$ERROR_MSG"'"}' \
+          -d '{"url": "'"$CF_APP"'", "status": "'"$DEPLOY_STATUS"'", "error": "'"$ERROR_MSG"'"}' \
           | jq '.' || true
       }
 

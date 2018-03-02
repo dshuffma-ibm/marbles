@@ -24,7 +24,7 @@ stages:
       application: ${CF_APP_NAME}
     script: |
       #!/bin/bash
-      trap fail_message 1 2 3 6
+      trap 'fail_message' 0 1 2 3 6
 
       unset ERROR_MSG
       export DEPLOY_STATUS=starting
@@ -33,12 +33,20 @@ stages:
       export VCAP_KEY_NAME="marbles_tc_creds"
       export CHANNEL="defaultchannel"
       export NETWORK_ID="n0cf9bf422fa542909a50dafaa91b1046" #todo get from service creds
+      export API_SECRET="c937e5da43d46fd93568363d7bb40ec409653b99c8c060765b66edd30ba17467" #todo get from service creds
+      export TIMESTAMP=$(date +%s)
 
       fail_message()
       {
-        printf "\n\nUh oh something failed...\n"
-        export ERROR_MSG="uh oh"
-        update_status
+        if [ "$DEPLOY_STATUS" != "sample_up" ]; then
+          printf "\n\nUh oh something failed...\n"
+          export ERROR_MSG="uh oh"
+          if [ "$API_HOST" != "" ]; then
+            update_status
+          fi
+        else
+          echo "Script complete successfully."
+        fi
       }
 
       update_status()
@@ -48,8 +56,8 @@ stages:
           -H 'Cache-Control: no-cache' \
           -H 'Content-Type: application/json' \
           -u $API_KEY:$API_SECRET \
-          -d '{"status": '"$DEPLOY_STATUS"',"error": '"$ERROR_MSG"'}' \
-          | jq '.'
+          -d '{"status": "'"$DEPLOY_STATUS"'","error": "'"$ERROR_MSG"'"}' \
+          | jq '.' || true
       }
 
       # -----------------------------------------------------------
@@ -67,7 +75,7 @@ stages:
         echo "A service instance name was provided, lets use that"
       else
         echo "A service instance name was NOT provided, lets use the default one"
-        export SERVICE_INSTANCE_NAME="davids-d2b-created"
+        export SERVICE_INSTANCE_NAME="$IBP-TIMESTAMP"
       fi
       printf "Using service instance name '${SERVICE_INSTANCE_NAME}'\n"
 
@@ -123,8 +131,8 @@ stages:
       cat ./config/marbles_tc.json -b
       export API_HOST="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].url' -r)"
       export API_KEY="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].key' -r)"
-      export API_SECRET="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].secret' -r)"
-      #export NETWORK_ID="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].network_id' -r)"
+      #export API_SECRET="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].secret' -r)"     #dsh uncomment
+      #export NETWORK_ID="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].network_id' -r)" #dsh uncomment
       echo "JQ results: api host=$API_HOST, key=$API_KEY, secret=$API_SECRET"           #dsh to do, remove secret
       export DEPLOY_STATUS="received_creds"
       update_status
@@ -145,7 +153,7 @@ stages:
         -F 'files[]=@./chaincode/src/marbles/read_ledger.go' \
         -F 'files[]=@./chaincode/src/marbles/write_ledger.go' \
         -F chaincode_id=$CF_APP \
-        -F chaincode_version=v1 \
+        -F chaincode_version=$TIMESTAMP \
         | jq '.'
       export DEPLOY_STATUS="installed_cc"
       update_status
@@ -159,7 +167,7 @@ stages:
         -H 'Cache-Control: no-cache' \
         -H 'Content-Type: application/json' \
         -u $API_KEY:$API_SECRET \
-        -d '{"chaincode_id": '"$CF_APP"',"chaincode_version": "v1","chaincode_arguments": "[\"12345\"]"}' \
+        -d '{"chaincode_id":"'"$CF_APP"'", "chaincode_version":"'"$TIMESTAMP"'", "chaincode_arguments":"[\"12345\"]"}' \
         | jq '.'
       export DEPLOY_STATUS="instantiated_cc"
       update_status
@@ -183,9 +191,8 @@ stages:
       cf start $CF_APP
 
       # -----------------------------------------------------------
-      # 9. Ping IBP that the application is alive - [ Optional ]
+      # 9. Ping IBP that the application is alive
       # -----------------------------------------------------------
       export DEPLOY_STATUS="sample_up"
       update_status
-
       printf "\n\n --- We are done here. ---\n\n"

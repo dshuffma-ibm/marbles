@@ -11,9 +11,6 @@ stages:
   - name: SERVICE_INSTANCE_NAME
     value: '{{sin}}'
     type: text
-  - name: ALIVE_SIGNAL
-    value: '{{alive_signal}}'
-    type: text
   - name: SAMPLE_REPO
     value: '{{SAMPLE_REPO}}'
     type: text
@@ -26,166 +23,169 @@ stages:
       space: ${PROD_SPACE_NAME}
       application: ${CF_APP_NAME}
     script: |
-    #!/bin/bash
-    export IBP_NAME="ibm-blockchain-5-dev"
-    export IBP_PLAN="ibm-blockchain-plan-v1-starter-dev"
-    export VCAP_KEY_NAME="marbles_tc_creds"
-    export CHANNEL="first"                                #todo get from service creds
-    export NETWORK_ID="n66f63d34d69d4c5786334495ed82aa4d" #todo get from service creds
+      #!/bin/bash
+      trap fail_message 1 2 3 6
 
-    # -----------------------------------------------------------
-    # Test Code - ignore me
-    # -----------------------------------------------------------
-    #printf "\n --- Listing services for testing ---\n"
-    #cf services
-    #cf services | sed -n 's/.*\(ibm-blockchain-plan-v1-prod\).*/\1/p'
-    #cf services | sed -n 's/.*\(${SERVICE_INSTANCE_NAME}\).*/\1/p'
+      unset ERROR_MSG
+      export DEPLOY_STATUS=starting
+      export IBP_NAME="ibm-blockchain-5-dev"
+      export IBP_PLAN="ibm-blockchain-plan-v1-starter-dev"
+      export VCAP_KEY_NAME="marbles_tc_creds"
+      export CHANNEL="first"
+      export NETWORK_ID="n66f63d34d69d4c5786334495ed82aa4d" #todo get from service creds
 
-    # -----------------------------------------------------------
-    # Install Things We Need
-    # -----------------------------------------------------------
-    printf "\n\nInstalling jq for json parsing\n"
-    sudo apt-get update -qq || true
-    sudo apt-get install jq
+      fail_message()
+      {
+        printf "\n\nUh oh something failed...\n"
+        export ERROR_MSG="uh oh"
+        update_status
+      }
 
-    # -----------------------------------------------------------
-    # Detect if there is already a service we should use - [ Optional ]
-    # -----------------------------------------------------------
-    printf "\n --- Detecting service options ---\n"
-    if [ "$SERVICE_INSTANCE_NAME" != "" ]; then
-      echo "A service instance name was provided, lets use that"
-    else
-      echo "A service instance name was NOT provided, lets use the default one"
-      export SERVICE_INSTANCE_NAME="davids-d2b-created"
-    fi
-    printf "Using service instance name '${SERVICE_INSTANCE_NAME}'\n"
+      update_status()
+      {
+        curl -X PUT \
+          "$API_HOST/api/v1/networks/$NETWORK_ID/sample/$CF_APP" \
+          -H 'Cache-Control: no-cache' \
+          -H 'Content-Type: application/json' \
+          -u $API_KEY:$API_SECRET \
+          -d '{"status": '"$DEPLOY_STATUS"',"error": '"$ERROR_MSG"'}' \
+          | jq '.'
+      }
 
-    # -----------------------------------------------------------
-    # Detect if we we have a callback url to hit when demo is alive - [ Optional ]
-    # -----------------------------------------------------------
-    if [ "$ALIVE_SIGNAL" != "" ]; then
-      echo "The alive signal url was provided, ${ALIVE_SIGNAL}"
-      #export ALIVE_SIGNAL=`echo $ALIVE_SIGNAL | sed -r 's/%3A/:/g'
-      curl -s --head $ALIVE_SIGNAL | head -n 1 | grep "HTTP/1.[01] [23].."
-    fi
+      # -----------------------------------------------------------
+      # Install Things We Need
+      # -----------------------------------------------------------
+      printf "\n\nInstalling jq for json parsing\n"
+      sudo apt-get update -qq || true
+      sudo apt-get install jq
 
-    # -----------------------------------------------------------
-    # 1. Test if everything we need is set
-    # -----------------------------------------------------------
-    printf "\n --- Testing if the script has what it needs ---\n"
-    export SCRIPT_ERROR="nope"
-      if [ "$IBP_NAME" == "" ]; then
-      echo "Error - bad script setup - IBP_NAME was not provided (IBM Blockchain service name)"
-      export SCRIPT_ERROR="yep"
-    fi
-    if [ "$IBP_PLAN" == "" ]; then
-      echo "Error - bad script setup - IBP_PLAN was not provided (IBM Blockchain service's plan name)"
-      export SCRIPT_ERROR="yep"
-    fi
-    if [ "$VCAP_KEY_NAME" == "" ]; then
-      echo "Error - bad script setup - VCAP_KEY_NAME was not provided (Bluemix service credential key name)"
-      export SCRIPT_ERROR="yep"
-    fi
-    if [ "$SERVICE_INSTANCE_NAME" == "" ]; then
-      echo "Error - bad script setup - SERVICE_INSTANCE_NAME was not provided (IBM Blockchain service instance name)"
-      export SCRIPT_ERROR="yep"
-    fi
-    if [ "$CF_APP" == "" ]; then
-      echo "Error - bad script setup - CF_APP was not provided (Marbles application name)"
-      export SCRIPT_ERROR="yep"
-    fi
-    if [ "$SCRIPT_ERROR" == "yep" ]; then
-      exit 1
-    else
-      echo "All good"
-    fi
+      # -----------------------------------------------------------
+      # Detect if there is already a service we should use - [ Optional ]
+      # -----------------------------------------------------------
+      printf "\n --- Detecting service options ---\n"
+      if [ "$SERVICE_INSTANCE_NAME" != "" ]; then
+        echo "A service instance name was provided, lets use that"
+      else
+        echo "A service instance name was NOT provided, lets use the default one"
+        export SERVICE_INSTANCE_NAME="davids-d2b-created"
+      fi
+      printf "Using service instance name '${SERVICE_INSTANCE_NAME}'\n"
 
-    # -----------------------------------------------------------
-    # 2. Create a service instance (this is okay to run if the service name already exists as long as its the same typeof service)
-    # -----------------------------------------------------------
-    printf "\n --- Creating/checking an instance of the IBM Blockchain Platform service ---\n"
-    cf create-service ${IBP_NAME} ${IBP_PLAN} ${SERVICE_INSTANCE_NAME}
-    cf create-service-key ${SERVICE_INSTANCE_NAME} ${VCAP_KEY_NAME} -c '{"msp_id":"PeerOrg1"}'
+      # -----------------------------------------------------------
+      # 1. Test if everything we need is set
+      # -----------------------------------------------------------
+      printf "\n --- Testing if the script has what it needs ---\n"
+      export SCRIPT_ERROR="nope"
+        if [ "$IBP_NAME" == "" ]; then
+        echo "Error - bad script setup - IBP_NAME was not provided (IBM Blockchain service name)"
+        export SCRIPT_ERROR="yep"
+      fi
+      if [ "$IBP_PLAN" == "" ]; then
+        echo "Error - bad script setup - IBP_PLAN was not provided (IBM Blockchain service's plan name)"
+        export SCRIPT_ERROR="yep"
+      fi
+      if [ "$VCAP_KEY_NAME" == "" ]; then
+        echo "Error - bad script setup - VCAP_KEY_NAME was not provided (Bluemix service credential key name)"
+        export SCRIPT_ERROR="yep"
+      fi
+      if [ "$SERVICE_INSTANCE_NAME" == "" ]; then
+        echo "Error - bad script setup - SERVICE_INSTANCE_NAME was not provided (IBM Blockchain service instance name)"
+        export SCRIPT_ERROR="yep"
+      fi
+      if [ "$CF_APP" == "" ]; then
+        echo "Error - bad script setup - CF_APP was not provided (Marbles application name)"
+        export SCRIPT_ERROR="yep"
+      fi
+      if [ "$CHANNEL" == "" ]; then
+        echo "Error - bad script setup - CHANNEL was not provided (name of the channel to use)"
+        export SCRIPT_ERROR="yep"
+      fi
+      if [ "$SCRIPT_ERROR" == "yep" ]; then
+        exit 1
+      else
+        echo "All good"
+      fi
 
-    # -----------------------------------------------------------
-    # 3. Get service credentials into our file system (remove the first two lines from cf service-key output)
-    # -----------------------------------------------------------
-    printf "\n --- Getting service credentials ---\n"
-    cf service-key ${SERVICE_INSTANCE_NAME} ${VCAP_KEY_NAME} > ./config/temp.txt
-    tail -n +2 ./config/temp.txt > ./config/marbles_tc.json
-    printf "\n --- testing marbles_tc.json --- \n"
-    cat ./config/marbles_tc.json -b
+      # -----------------------------------------------------------
+      # 2. Create a service instance (this is okay to run if the service name already exists as long as its the same typeof service)
+      # -----------------------------------------------------------
+      printf "\n --- Creating/checking an instance of the IBM Blockchain Platform service ---\n"
+      cf create-service ${IBP_NAME} ${IBP_PLAN} ${SERVICE_INSTANCE_NAME}
+      cf create-service-key ${SERVICE_INSTANCE_NAME} ${VCAP_KEY_NAME} -c '{"msp_id":"PeerOrg1"}'
 
-    echo "testing getting url from json"
-    #cat ./config/marbles_tc.json | jq '.credentials[0].version'
-    #cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"]'
-    #cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].url' -r
-    export API_HOST="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].url' -r)"
-    export API_KEY="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].key' -r)"
-    export API_SECRET="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].secret' -r)"
-    echo "JQ results: api host=$API_HOST, key=$API_KEY, secret=$API_SECRET"           #dsh to do, remove secret
+      # -----------------------------------------------------------
+      # 3. Get service credentials into our file system (remove the first two lines from cf service-key output)
+      # -----------------------------------------------------------
+      printf "\n --- Getting service credentials ---\n"
+      cf service-key ${SERVICE_INSTANCE_NAME} ${VCAP_KEY_NAME} > ./config/temp.txt
+      tail -n +2 ./config/temp.txt > ./config/marbles_tc.json
+      printf "\n --- testing marbles_tc.json --- \n"
+      cat ./config/marbles_tc.json -b
+      export API_HOST="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].url' -r)"
+      export API_KEY="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].key' -r)"
+      export API_SECRET="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].secret' -r)"
+      #export NETWORK_ID="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].network_id' -r)"
+      echo "JQ results: api host=$API_HOST, key=$API_KEY, secret=$API_SECRET"           #dsh to do, remove secret
+      export DEPLOY_STATUS="received_creds"
+      update_status
 
-    # -----------------------------------------------------------
-    # 4. Install and instantiate the chaincode
-    # -----------------------------------------------------------
-    printf "\n\n --- Installing chaincode ---\n\n"
-    #echo "testing tar"
-    #tar cvf marbles.tar ./chaincode/src/marbles
-    curl -X POST \
-      "$API_HOST/api/v1/networks/$NETWORK_ID/chaincode/install" \
-      -H 'Cache-Control: no-cache' \
-      -H 'content-type: multipart/form-data;' \
-      -u $API_KEY:$API_SECRET\
-      -F 'files[]=@./chaincode/src/marbles/lib.go' \
-      -F 'files[]=@./chaincode/src/marbles/marbles.go' \
-      -F 'files[]=@./chaincode/src/marbles/read_ledger.go' \
-      -F 'files[]=@./chaincode/src/marbles/write_ledger.go' \
-      -F chaincode_id=marbles-sample \
-      -F chaincode_version=v6 \
-      | jq '.'
+      # -----------------------------------------------------------
+      # 4. Install and instantiate the chaincode
+      # -----------------------------------------------------------
+      #echo "testing tar"
+      #tar cvf marbles.tar ./chaincode/src/marbles
+      printf "\n\n --- Installing chaincode ---\n\n"
+      curl -X POST \
+        "$API_HOST/api/v1/networks/$NETWORK_ID/chaincode/install" \
+        -H 'Cache-Control: no-cache' \
+        -H 'content-type: multipart/form-data;' \
+        -u $API_KEY:$API_SECRET\
+        -F 'files[]=@./chaincode/src/marbles/lib.go' \
+        -F 'files[]=@./chaincode/src/marbles/marbles.go' \
+        -F 'files[]=@./chaincode/src/marbles/read_ledger.go' \
+        -F 'files[]=@./chaincode/src/marbles/write_ledger.go' \
+        -F chaincode_id=$CF_APP \
+        -F chaincode_version=v1 \
+        | jq '.'
+      export DEPLOY_STATUS="installed_cc"
+      update_status
 
-    printf "\n\n --- Instantiating chaincode on channel $CHANNEL ---\n\n"
-    curl -X POST \
-      "$API_HOST/api/v1/networks/$NETWORK_ID/channels/$CHANNEL/chaincode/instantiate" \
-      -H 'Cache-Control: no-cache' \
-      -H 'Content-Type: application/json' \
-      -u $API_KEY:$API_SECRET \
-      -d '{"chaincode_id": "marbles","chaincode_version": "v4","chaincode_arguments": "[\"12345\"]"}' \
-      | jq '.'
+      # -----------------------------------------------------------
+      # 5. Instantiate the chaincode
+      # -----------------------------------------------------------
+      printf "\n\n --- Instantiating chaincode on channel $CHANNEL ---\n\n"
+      curl -X POST \
+        "$API_HOST/api/v1/networks/$NETWORK_ID/channels/$CHANNEL/chaincode/instantiate" \
+        -H 'Cache-Control: no-cache' \
+        -H 'Content-Type: application/json' \
+        -u $API_KEY:$API_SECRET \
+        -d '{"chaincode_id": '"$CF_APP"',"chaincode_version": "v1","chaincode_arguments": "[\"12345\"]"}' \
+        | jq '.'
+      export DEPLOY_STATUS="instantiated_cc"
+      update_status
 
-    # -----------------------------------------------------------
-    # 5. Push application (don't start yet, wait for binding)
-    # -----------------------------------------------------------
-    printf "\n --- Creating the Marbles application ---\n"
-    cf push $CF_APP --no-start
+      # -----------------------------------------------------------
+      # 6. Push application (don't start yet, wait for binding)
+      # -----------------------------------------------------------
+      printf "\n --- Creating the Marbles application ---\n"
+      cf push $CF_APP --no-start
 
-    # -----------------------------------------------------------
-    # 6. Bind application to the blockchain service
-    # -----------------------------------------------------------
-    printf "\n --- Binding the IBM Blockchain Platform service to Marbles ---\n"
-    cf bind-service $CF_APP ${SERVICE_INSTANCE_NAME} -c "{\"permissions\":\"read-only\"}"
+      # -----------------------------------------------------------
+      # 7. Bind application to the blockchain service
+      # -----------------------------------------------------------
+      printf "\n --- Binding the IBM Blockchain Platform service to Marbles ---\n"
+      cf bind-service $CF_APP ${SERVICE_INSTANCE_NAME} -c "{\"permissions\":\"read-only\"}"
 
-    # -----------------------------------------------------------
-    # 7. Start her up
-    # -----------------------------------------------------------
-    printf "\n --- Starting Marbles ---\n"
-    cf start $CF_APP
+      # -----------------------------------------------------------
+      # 8. Start her up
+      # -----------------------------------------------------------
+      printf "\n --- Starting Marbles ---\n"
+      cf start $CF_APP
 
-    # -----------------------------------------------------------
-    # 8. Ping IBP that the application is alive  - [ Optional ]
-    # -----------------------------------------------------------
-    if [ "$ALIVE_SIGNAL" != "" ]; then
-      printf "\n --- Sending signal that the demo is alive ---\n"
-      curl -s --head $ALIVE_SIGNAL | head -n 1 | grep "HTTP/1.[01] [23].."
-    fi
+      # -----------------------------------------------------------
+      # 9. Ping IBP that the application is alive - [ Optional ]
+      # -----------------------------------------------------------
+      export DEPLOY_STATUS="sample_up"
+      update_status
 
-    printf "\n\n --- We are done here. ---\n\n"
-
-       # -----------------------------------------------------------
-    # x. Install and instantiate the chaincode (dsh disabled for now)
-    # -----------------------------------------------------------
-    #printf "\n --- Setting up for deployment ---\n"
-    #export PATH=/opt/IBM/node-v6.7.0/bin:$PATH
-    #npm install
-    #printf "\n --- Deploying Chaincode ---\n"
-    #node ./scripts/deploy_chaincode.js || true
+      printf "\n\n --- We are done here. ---\n\n"

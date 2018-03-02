@@ -10,8 +10,8 @@
 
 ***
 
-[![Deploy To Bluemix](/.bluemix/create_marbles_tc_new_button.png)](https://console.stage1.bluemix.net/devops/setup/deploy/?repository=https%3A//github.com/dshuffma-ibm/marbles&branch=v4.0&redirect_uri=https%3A//ibmblockchain-staging-v2.stage1.ng.bluemix.net/network/93b420b764074a0d98943da89f3d8820/demos)
-or [![Deploy To Bluemix](/.bluemix/create_marbles_tc_existing_button.png)](https://console.stage1.bluemix.net/devops/setup/deploy/?repository=https%3A//github.com/dshuffma-ibm/marbles&branch=v4.0&redirect_uri=https%3A//ibmblockchain-staging-v2.stage1.ng.bluemix.net/network/93b420b764074a0d98943da89f3d8820/demos&alive_signal=https%3A//ibmblockchain-staging-v2.stage1.ng.bluemix.net/api/network/93b420b764074a0d98943da89f3d8820/demos/alive)
+[![Deploy To Bluemix](/.bluemix/create_marbles_tc_new_button.png)](https://console.stage1.bluemix.net/devops/setup/deploy/?repository=https%3A//github.com/dshuffma-ibm/marbles&branch=v4.0)
+or [![Deploy To Bluemix](/.bluemix/create_marbles_tc_existing_button.png)](https://console.stage1.bluemix.net/devops/setup/deploy/?repository=https%3A//github.com/dshuffma-ibm/marbles&branch=v4.0&redirect_uri=https%3A//ibmblockchain-staging-v2.stage1.ng.bluemix.net/network/93b420b764074a0d98943da89f3d8820/demos)
 
 ***
 

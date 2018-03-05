@@ -32,10 +32,8 @@ stages:
       export IBP_PLAN="ibm-blockchain-plan-v1-starter-dev"
       export VCAP_KEY_NAME="marbles_tc_creds"
       export CHANNEL="defaultchannel"
-      export NETWORK_ID="n9d36c29770434b46bf2d636dd7c5bd4a" #todo get from service creds
-      export API_SECRET="440cf8066048316f98476944046d1d4848437c11601d81022a271418755186d0" #todo get from service creds
-      export SERVICE_INSTANCE_NAME="03-05-2018"       #todo get from helios
       export TIMESTAMP=$(date +%s)
+      export APP_URL="unknown_yet"                    # we correct this later
 
       fail_message()
       {
@@ -52,12 +50,14 @@ stages:
 
       update_status()
       {
+        echo "$API_HOST/api/v1/networks/$NETWORK_ID/sample/marbles"   #dsh remove this
+        echo '{"app": "'"$CF_APP"'", "url": "'"$APP_URL"'", "status": "'"$DEPLOY_STATUS"'", "error": "'"$ERROR_MSG"'"}'
         curl -X PUT \
           "$API_HOST/api/v1/networks/$NETWORK_ID/sample/marbles" \
           -H 'Cache-Control: no-cache' \
           -H 'Content-Type: application/json' \
           -u $API_KEY:$API_SECRET \
-          -d '{"url": "'"$CF_APP"'", "status": "'"$DEPLOY_STATUS"'", "error": "'"$ERROR_MSG"'"}' \
+          -d '{"app": "'"$CF_APP"'", "url": "'"$APP_URL"'", "status": "'"$DEPLOY_STATUS"'", "error": "'"$ERROR_MSG"'"}' \
           | jq '.' || true
       }
 
@@ -132,8 +132,8 @@ stages:
       cat ./config/marbles_tc.json -b
       export API_HOST="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].url' -r)"
       export API_KEY="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].key' -r)"
-      #export API_SECRET="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].secret' -r)"     #dsh uncomment
-      #export NETWORK_ID="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].network_id' -r)" #dsh uncomment
+      export API_SECRET="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].secret' -r)"
+      export NETWORK_ID="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].network_id' -r)"
       echo "JQ results: api host=$API_HOST, key=$API_KEY, secret=$API_SECRET"           #dsh to do, remove secret
       export DEPLOY_STATUS="received_creds"
       update_status
@@ -155,6 +155,7 @@ stages:
         -F 'files[]=@./chaincode/src/marbles/write_ledger.go' \
         -F chaincode_id=$CF_APP \
         -F chaincode_version=$TIMESTAMP \
+        --connect-timeout 30 \
         | jq '.'
       export DEPLOY_STATUS="installed_cc"
       update_status
@@ -169,6 +170,7 @@ stages:
         -H 'Content-Type: application/json' \
         -u $API_KEY:$API_SECRET \
         -d '{"chaincode_id":"'"$CF_APP"'", "chaincode_version":"'"$TIMESTAMP"'", "chaincode_arguments":"[\"12345\"]"}' \
+        --connect-timeout 120 \
         | jq '.'
       export DEPLOY_STATUS="instantiated_cc"
       update_status
@@ -178,6 +180,7 @@ stages:
       # -----------------------------------------------------------
       printf "\n --- Creating the Marbles application ---\n"
       cf push $CF_APP --no-start
+      export APP_URL=$(cf app $CF_APP | grep -Po "(?<=routes:)\s*\S*")
 
       # -----------------------------------------------------------
       # 7. Bind application to the blockchain service

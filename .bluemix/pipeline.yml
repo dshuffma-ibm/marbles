@@ -32,8 +32,9 @@ stages:
       export IBP_PLAN="ibm-blockchain-plan-v1-starter-dev"
       export VCAP_KEY_NAME="marbles_tc_creds"
       export CHANNEL="defaultchannel"
-      export NETWORK_ID="n0cf9bf422fa542909a50dafaa91b1046" #todo get from service creds
-      export API_SECRET="c937e5da43d46fd93568363d7bb40ec409653b99c8c060765b66edd30ba17467" #todo get from service creds
+      export NETWORK_ID="n9d36c29770434b46bf2d636dd7c5bd4a" #todo get from service creds
+      export API_SECRET="440cf8066048316f98476944046d1d4848437c11601d81022a271418755186d0" #todo get from service creds
+      export SERVICE_INSTANCE_NAME="03-05-2018"       #todo get from helios
       export TIMESTAMP=$(date +%s)
 
       fail_message()
@@ -75,7 +76,7 @@ stages:
         echo "A service instance name was provided, lets use that"
       else
         echo "A service instance name was NOT provided, lets use the default one"
-        export SERVICE_INSTANCE_NAME="$IBP-TIMESTAMP"
+        export SERVICE_INSTANCE_NAME="IBP-$TIMESTAMP"
       fi
       printf "Using service instance name '${SERVICE_INSTANCE_NAME}'\n"
 

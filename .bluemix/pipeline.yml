@@ -24,9 +24,8 @@ stages:
       application: ${CF_APP_NAME}
     script: |
       #!/bin/bash
-      trap 'fail_message' 0 1 2 3 6
+      trap 'detect_exit' 0 1 2 3 6
 
-      export DEPLOY_STATUS=starting
       export IBP_NAME="ibm-blockchain-5-dev"
       export IBP_PLAN="ibm-blockchain-plan-v1-starter-dev"
       export VCAP_KEY_NAME="marbles_tc_creds"
@@ -34,7 +33,7 @@ stages:
       export TIMESTAMP=$(date +%s)
       export APP_URL="unknown_yet"                    # we correct this later
 
-      fail_message()
+      detect_exit()
       {
         if [ "$DEPLOY_STATUS" != "sample_up" ]; then
           printf "\n\n --- Uh oh something failed... ---\n"
@@ -62,13 +61,6 @@ stages:
       }
 
       # -----------------------------------------------------------
-      # Install Things We Need
-      # -----------------------------------------------------------
-      printf "\n\nInstalling jq for json parsing\n"
-      sudo apt-get update -qq || true
-      sudo apt-get install jq
-
-      # -----------------------------------------------------------
       # Detect if there is already a service we should use - [ Optional ]
       # -----------------------------------------------------------
       printf "\n --- Detecting service options ---\n"
@@ -79,6 +71,13 @@ stages:
         export SERVICE_INSTANCE_NAME="IBP-$TIMESTAMP"
       fi
       printf "Using service instance name '${SERVICE_INSTANCE_NAME}'\n"
+
+      # -----------------------------------------------------------
+      # 0. Install Things We Need
+      # -----------------------------------------------------------
+      printf "\n\nInstalling jq for json parsing\n"
+      sudo apt-get update -qq || true
+      sudo apt-get install jq
 
       # -----------------------------------------------------------
       # 1. Test if everything we need is set

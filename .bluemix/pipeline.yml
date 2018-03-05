@@ -26,7 +26,6 @@ stages:
       #!/bin/bash
       trap 'fail_message' 0 1 2 3 6
 
-      unset ERROR_MSG
       export DEPLOY_STATUS=starting
       export IBP_NAME="ibm-blockchain-5-dev"
       export IBP_PLAN="ibm-blockchain-plan-v1-starter-dev"
@@ -38,26 +37,27 @@ stages:
       fail_message()
       {
         if [ "$DEPLOY_STATUS" != "sample_up" ]; then
-          printf "\n\nUh oh something failed...\n"
-          export ERROR_MSG="uh oh"
+          printf "\n\n --- Uh oh something failed... ---\n"
+          export DEPLOY_STATUS="tc_error"
           if [ "$API_HOST" != "" ]; then
             update_status
           fi
         else
-          echo "Script complete successfully."
+          echo "Script completed successfully. =)"
         fi
       }
 
       update_status()
       {
+        echo "Updating Deployment Status"
         echo "$API_HOST/api/v1/networks/$NETWORK_ID/sample/marbles"   #dsh remove this
-        echo '{"app": "'"$CF_APP"'", "url": "'"$APP_URL"'", "status": "'"$DEPLOY_STATUS"'", "error": "'"$ERROR_MSG"'"}'
-        curl -X PUT \
+        echo '{"app": "'"$CF_APP"'", "url": "'"$APP_URL"'", "status": "'"$DEPLOY_STATUS"'"}'
+        curl -X PUT -s -S\
           "$API_HOST/api/v1/networks/$NETWORK_ID/sample/marbles" \
           -H 'Cache-Control: no-cache' \
           -H 'Content-Type: application/json' \
           -u $API_KEY:$API_SECRET \
-          -d '{"app": "'"$CF_APP"'", "url": "'"$APP_URL"'", "status": "'"$DEPLOY_STATUS"'", "error": "'"$ERROR_MSG"'"}' \
+          -d '{"app": "'"$CF_APP"'", "url": "'"$APP_URL"'", "status": "'"$DEPLOY_STATUS"'"}' \
           | jq '.' || true
       }
 
@@ -128,8 +128,7 @@ stages:
       printf "\n --- Getting service credentials ---\n"
       cf service-key ${SERVICE_INSTANCE_NAME} ${VCAP_KEY_NAME} > ./config/temp.txt
       tail -n +2 ./config/temp.txt > ./config/marbles_tc.json
-      printf "\n --- testing marbles_tc.json --- \n"
-      cat ./config/marbles_tc.json -b
+      #cat ./config/marbles_tc.json -b             # uncomment this if you are okay with your service creds being logged
       export API_HOST="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].url' -r)"
       export API_KEY="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].key' -r)"
       export API_SECRET="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].secret' -r)"
@@ -155,8 +154,7 @@ stages:
         -F 'files[]=@./chaincode/src/marbles/write_ledger.go' \
         -F chaincode_id=$CF_APP \
         -F chaincode_version=$TIMESTAMP \
-        --connect-timeout 30 \
-        | jq '.'
+        --connect-timeout 30
       export DEPLOY_STATUS="installed_cc"
       update_status
 
@@ -170,8 +168,7 @@ stages:
         -H 'Content-Type: application/json' \
         -u $API_KEY:$API_SECRET \
         -d '{"chaincode_id":"'"$CF_APP"'", "chaincode_version":"'"$TIMESTAMP"'", "chaincode_arguments":"[\"12345\"]"}' \
-        --connect-timeout 120 \
-        | jq '.'
+        --connect-timeout 120
       export DEPLOY_STATUS="instantiated_cc"
       update_status
 

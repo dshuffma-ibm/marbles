@@ -49,7 +49,6 @@ stages:
       update_status()
       {
         echo "Updating Deployment Status"
-        echo "$API_HOST/api/v1/networks/$NETWORK_ID/sample/marbles"   #dsh remove this
         echo '{"app": "'"$CF_APP"'", "url": "'"$APP_URL"'", "status": "'"$DEPLOY_STATUS"'"}'
         curl -X PUT -s -S\
           "$API_HOST/api/v1/networks/$NETWORK_ID/sample/marbles" \
@@ -132,7 +131,7 @@ stages:
       export API_KEY="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].key' -r)"
       export API_SECRET="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].secret' -r)"
       export NETWORK_ID="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].network_id' -r)"
-      echo "JQ results: api host=$API_HOST, key=$API_KEY, secret=$API_SECRET"           #dsh to do, remove secret
+      echo "JQ results: api host=$API_HOST, key=$API_KEY"
       export DEPLOY_STATUS="received_creds"
       update_status
 

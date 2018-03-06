@@ -138,8 +138,6 @@ stages:
       # -----------------------------------------------------------
       # 4. Install and instantiate the chaincode
       # -----------------------------------------------------------
-      #echo "testing tar"
-      #tar cvf marbles.tar ./chaincode/src/marbles
       printf "\n\n --- Installing chaincode ---\n\n"
       curl -X POST \
         "$API_HOST/api/v1/networks/$NETWORK_ID/chaincode/install" \

@@ -2,10 +2,8 @@
 // Websocket Server Side Code
 // ==================================
 //var async = require('async');
-var path = require('path');
 
-module.exports = function (g_options, fcw, logger) {
-	var helper = require(path.join(__dirname, './helper.js'))(process.env.creds_filename, logger);
+module.exports = function (g_options, helper, fcw, logger) {
 	var ws_server = {};
 	var broadcast = null;
 	var known_everything = {};

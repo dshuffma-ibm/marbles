@@ -17,16 +17,16 @@ module.exports = function (logger) {
 			}
 			console.log('testing vcap', typeof VCAP, JSON.stringify(VCAP));
 
-			for (let plan_name in process.env.VCAP) {
+			for (let plan_name in VCAP) {
 				console.log('looking at plan', plan_name);
 				if (plan_name.indexOf('blockchain') >= 0) {
 					logger.debug('pretty sure this is the IBM Blockchain Platform service:', plan_name);
-					console.log('test 1', process.env.VCAP[plan_name][0]);
-					console.log('test 2', process.env.VCAP[plan_name][0].credentials);
-					console.log('test 3', process.env.VCAP[plan_name][0].credentials.credentials);
-					console.log('test 4', process.env.VCAP[plan_name][0].credentials.credentials[0]);
-					if (process.env.VCAP[plan_name][0].credentials && process.env.VCAP[plan_name][0].credentials.credentials) {	//pull the first one
-						return process.env.VCAP[plan_name][0].credentials.credentials[0];		// this should be our connection profile
+					console.log('test 1', VCAP[plan_name][0]);
+					console.log('test 2', VCAP[plan_name][0].credentials);
+					console.log('test 3', VCAP[plan_name][0].credentials.credentials);
+					console.log('test 4', VCAP[plan_name][0].credentials.credentials[0]);
+					if (VCAP[plan_name][0].credentials && VCAP[plan_name][0].credentials.credentials) {	//pull the first one
+						return VCAP[plan_name][0].credentials.credentials[0];		// this should be our connection profile
 					}
 				}
 			}

@@ -31,7 +31,7 @@ var misc = require('./utils/misc.js')(logger);					//random non-blockchain relat
 misc.check_creds_for_valid_json();
 var helper = require(__dirname + '/utils/helper.js')(process.env.creds_filename, logger);				//parses our blockchain config file
 var fcw = require('./utils/fc_wrangler/index.js')({ block_delay: helper.getBlockDelay() }, logger);		//fabric client wrangler wraps the SDK
-var ws_server = require('./utils/websocket_server_side.js')({ block_delay: helper.getBlockDelay() }, fcw, logger);	//websocket logic
+var ws_server = require('./utils/websocket_server_side.js')({ block_delay: helper.getBlockDelay() }, helper, fcw, logger);	//websocket logic
 
 // ------------- Init ------------- //
 var more_entropy = misc.randStr(32);

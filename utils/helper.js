@@ -8,20 +8,52 @@ var os = require('os');
 
 module.exports = function (config_filename, logger) {
 	var helper = {};
+	var package_json = require(path.join(__dirname, '../package.json'));		// get release version of marbles from package.json
 
-	// default config file name
-	if (!config_filename) {
-		config_filename = 'marbles_tls.json';
+	if (process.env.VCAP_SERVICES) {											// if we are in bluemix, use vcap
+		logger.info('Detecting that we are in IBM Cloud');
+		console.log('testing vcap', JSON.stringify(process.env.VCAP_SERVICES));
+
+		helper.config_path = 'there-is-no-file-using-a-cloud';
+		helper.creds_path = 'there-is-no-file-using-a-cloud';
+		helper.config = {
+			'cred_filename': 'there-is-no-file-using-a-cloud',
+			'use_events': true,
+			'keep_alive_secs': 120,
+			'company': 'United Marbles',
+			'usernames': [
+				'amy',
+				'alice',
+				'ava'
+			],
+			'port': 3001
+		};
+		let foundCreds = false;
+		for (let plan_name in process.env.VCAP_SERVICES) {
+			console.log('looking at plan', plan_name);
+			if (plan_name.indexOf('blockchain')) {
+				logger.debug('pretty sure this is the IBM Blockchain Platform service:', plan_name);
+				if (process.env.VCAP_SERVICES[plan_name].credentials && process.env.VCAP_SERVICES[plan_name].credentials.credentials) {
+					helper.creds = process.env.VCAP_SERVICES[plan_name].credentials.credentials[0];		// this should be our connection profile
+					foundCreds = true;
+					break;
+				}
+			}
+		}
+
+		logger.info('Loaded creds from a IBM Cloud binding', foundCreds);
+	} else {
+		if (!config_filename) {
+			config_filename = 'marbles_tls.json';												// default config file name
+		}
+		helper.config_path = path.join(__dirname, '../config/' + config_filename);
+		helper.config = require(helper.config_path);											// load the config file
+		helper.creds_path = path.join(__dirname, '../config/' + helper.config.cred_filename);
+		helper.creds = require(helper.creds_path);												// load the credential file
+
+		logger.info('Loaded config file', helper.config_path);									// path to config file
+		logger.info('Loaded creds file', helper.creds_path);									// path to the blockchain credentials file
 	}
-
-	helper.config_path = path.join(__dirname, '../config/' + config_filename);
-	helper.config = require(helper.config_path);											//load the config file
-	helper.creds_path = path.join(__dirname, '../config/' + helper.config.cred_filename);
-	helper.creds = require(helper.creds_path);												//load the credential file
-	var package_json = require(path.join(__dirname, '../package.json'));					//get release version of marbles from package.json
-
-	logger.info('Loaded config file', helper.config_path);									//path to config file
-	logger.info('Loaded creds file', helper.creds_path);									//path to the blockchain credentials file
 
 	// get network id
 	helper.getNetworkName = function () {

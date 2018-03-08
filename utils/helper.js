@@ -380,8 +380,15 @@ module.exports = function (config_filename, logger) {
 	helper.getChaincodeId = function () {
 		var channel = helper.getFirstChannelId();
 		if (channel && helper.creds.channels[channel] && helper.creds.channels[channel].chaincodes) {
-			var chaincode = Object.keys(helper.creds.channels[channel].chaincodes);
-			return chaincode[0];
+			if (Array.isArray(helper.creds.channels[channel].chaincodes)) {				// config version 1.0.2 way
+				let chaincode = helper.creds.channels[channel].chaincodes[0];
+				if (chaincode) {
+					return chaincode.split(':')[0];
+				}
+			} else {
+				let chaincode = Object.keys(helper.creds.channels[channel].chaincodes);	// config version 1.0.0 and 1.0.1 way
+				return chaincode[0];
+			}
 		}
 		logger.warn('No chaincode ID found in credentials file... might be okay if we haven\'t instantiated marbles yet');
 		return null;
@@ -392,7 +399,14 @@ module.exports = function (config_filename, logger) {
 		var channel = helper.getFirstChannelId();
 		var chaincodeId = helper.getChaincodeId();
 		if (channel && chaincodeId) {
-			return helper.creds.channels[channel].chaincodes[chaincodeId];
+			if (Array.isArray(helper.creds.channels[channel].chaincodes)) {				// config version 1.0.2 way
+				let chaincode = helper.creds.channels[channel].chaincodes[0];
+				if (chaincode) {
+					return chaincode.split(':')[1];
+				}
+			} else {
+				return helper.creds.channels[channel].chaincodes[chaincodeId];			// config version 1.0.0 and 1.0.1 way
+			}
 		}
 		logger.warn('No chaincode version found in credentials file... might be okay if we haven\'t instantiated marbles yet');
 		return null;
@@ -596,12 +610,18 @@ module.exports = function (config_filename, logger) {
 			creds_file.certificateAuthorities[first_ca].url = obj.caUrl;
 		}
 		if (obj.chaincodeId) {
-			const version = helper.getChaincodeVersion();
-			creds_file.channels[channel].chaincodes = {};
-			creds_file.channels[channel].chaincodes[obj.chaincodeId] = version;
+			let version = helper.getChaincodeVersion();
+			if (obj.chaincodeVersion) {						// changing both id and version
+				version = obj.chaincodeVersion;
+			}
+			creds_file.channels[channel].chaincodes = [obj.chaincodeId + ':' + version];
 		}
 		if (obj.chaincodeVersion) {
-			creds_file.channels[channel].chaincodes[helper.getChaincodeId()] = obj.chaincodeVersion;
+			let chaincodeId = helper.getChaincodeId();
+			if (obj.chaincodeId) {							// changing both id and version
+				chaincodeId = obj.chaincodeVersion;
+			}
+			creds_file.channels[channel].chaincodes = [chaincodeId + ':' + obj.chaincodeVersion];
 		}
 		if (obj.channelId) {
 			const old_channel_obj = JSON.parse(JSON.stringify(creds_file.channels[channel]));

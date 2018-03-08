@@ -9,17 +9,10 @@ var os = require('os');
 module.exports = function (config_filename, logger) {
 	var helper = {};
 	var package_json = require(path.join(__dirname, '../package.json'));		// get release version of marbles from package.json
+	var misc = require(path.join(__dirname, './misc.js'))(logger);
 
-	if (process.env.VCAP_SERVICES) {											// if we are in bluemix, use vcap
-		logger.info('Detecting that we are in IBM Cloud');
-		let VCAP = null;
-		try {
-			VCAP = JSON.parse(process.env.VCAP_SERVICES);
-		} catch (e) {
-			logger.error('VCAP from IBM Cloud is not JSON... this is bad');
-		}
-		console.log('testing vcap', typeof VCAP, JSON.stringify(VCAP));
-
+	let cloudy = misc.detectingIbmCloud();
+	if (cloudy) {											// if we are in bluemix, use vcap
 		helper.config_path = 'there-is-no-file-using-a-cloud';
 		helper.creds_path = 'there-is-no-file-using-a-cloud';
 		helper.config = {
@@ -34,20 +27,9 @@ module.exports = function (config_filename, logger) {
 			],
 			'port': 3001
 		};
-		let foundCreds = false;
-		for (let plan_name in process.env.VCAP) {
-			console.log('looking at plan', plan_name);
-			if (plan_name.indexOf('blockchain') >= 0) {
-				logger.debug('pretty sure this is the IBM Blockchain Platform service:', plan_name);
-				if (process.env.VCAP[plan_name].credentials && process.env.VCAP[plan_name].credentials.credentials) {
-					helper.creds = process.env.VCAP[plan_name].credentials.credentials[0];		// this should be our connection profile
-					foundCreds = true;
-					break;
-				}
-			}
-		}
-
-		logger.info('Loaded creds from a IBM Cloud binding', foundCreds);
+		helper.creds = cloudy;
+		console.log('test?', Object.keys(helper.creds));
+		logger.info('Loaded creds from a IBM Cloud binding');
 	} else {
 		if (!config_filename) {
 			config_filename = 'marbles_tls.json';												// default config file name

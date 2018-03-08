@@ -5,33 +5,65 @@ module.exports = function (logger) {
 	var misc = {};
 	let creds_path = null;
 
-	// Check if blockchain creds files is okay
-	misc.check_creds_for_valid_json = function (cb) {
-		if (!process.env.creds_filename) {
-			process.env.creds_filename = 'marbles_tls.json';				//default to a file
-		}
-
-		var config_path = path.join(__dirname, '../config/' + process.env.creds_filename);
-		try {
-			let configFile = require(config_path);
-			creds_path = path.join(__dirname, '../config/' + configFile.cred_filename);
-			let creds = require(creds_path);
-			if (creds.name) {
-				logger.info('Checking credentials file is done');
-				return null;
-			} else {
-				throw 'missing network id';
+	// See if marbles is running within IBM Cloud or not - return connection profile if so, null if not
+	misc.detectingIbmCloud = function () {
+		if (process.env.VCAP_SERVICES) {											// if we are in bluemix, use vcap
+			logger.info('Detecting that we are in IBM Cloud');
+			let VCAP = null;
+			try {
+				VCAP = JSON.parse(process.env.VCAP_SERVICES);
+			} catch (e) {
+				logger.error('VCAP from IBM Cloud is not JSON... this is bad');
 			}
-		} catch (e) {
-			logger.error('---------------------------------------------------------------');
-			logger.error('----------------------------- Bah -----------------------------');
-			logger.error('------------- The credentials file is malformed ---------------');
-			logger.error('---------------------------------------------------------------');
-			logger.error('Fix this file: ' + creds_path);
-			logger.warn('It must be valid JSON.  You may have dropped a comma or added one too many.');
-			logger.warn('----------------------------------------------------------------------');
-			logger.error(e);
-			process.exit();									//all stop
+			console.log('testing vcap', typeof VCAP, JSON.stringify(VCAP));
+
+			for (let plan_name in process.env.VCAP) {
+				console.log('looking at plan', plan_name);
+				if (plan_name.indexOf('blockchain') >= 0) {
+					logger.debug('pretty sure this is the IBM Blockchain Platform service:', plan_name);
+					console.log('test 1', process.env.VCAP[plan_name][0]);
+					console.log('test 2', process.env.VCAP[plan_name][0].credentials);
+					console.log('test 3', process.env.VCAP[plan_name][0].credentials.credentials);
+					console.log('test 4', process.env.VCAP[plan_name][0].credentials.credentials[0]);
+					if (process.env.VCAP[plan_name][0].credentials && process.env.VCAP[plan_name][0].credentials.credentials) {	//pull the first one
+						return process.env.VCAP[plan_name][0].credentials.credentials[0];		// this should be our connection profile
+					}
+				}
+			}
+			logger.error('uh oh, we are using IBM Cloud but I could not find VCAP');
+		}
+		return null;
+	};
+
+	// Check if blockchain creds files are okay
+	misc.check_creds_for_valid_json = function (cb) {
+		if (!misc.detectingIbmCloud()) {
+			if (!process.env.creds_filename) {
+				process.env.creds_filename = 'marbles_tls.json';				//default to a file
+			}
+
+			var config_path = path.join(__dirname, '../config/' + process.env.creds_filename);
+			try {
+				let configFile = require(config_path);
+				creds_path = path.join(__dirname, '../config/' + configFile.cred_filename);
+				let creds = require(creds_path);
+				if (creds.name) {
+					logger.info('Checking credentials file is done');
+					return null;
+				} else {
+					throw 'missing network id';
+				}
+			} catch (e) {
+				logger.error('---------------------------------------------------------------');
+				logger.error('----------------------------- Bah -----------------------------');
+				logger.error('------------- The credentials file is malformed ---------------');
+				logger.error('---------------------------------------------------------------');
+				logger.error('Fix this file: ' + creds_path);
+				logger.warn('It must be valid JSON.  You may have dropped a comma or added one too many.');
+				logger.warn('----------------------------------------------------------------------');
+				logger.error(e);
+				process.exit();									//all stop
+			}
 		}
 	};
 

@@ -35,9 +35,9 @@ stages:
 
       detect_exit()
       {
-        if [ "$DEPLOY_STATUS" != "sample_up" ]; then
+        if [ "$COMPLETED_STEP" != "4" ]; then
           printf "\n\n --- Uh oh something failed... ---\n"
-          export DEPLOY_STATUS="tc_error"
+          export COMPLETED_STEP="-1"
           if [ "$API_HOST" != "" ]; then
             update_status
           fi
@@ -49,13 +49,13 @@ stages:
       update_status()
       {
         echo "Updating Deployment Status"
-        echo '{"app": "'"$CF_APP"'", "url": "'"$APP_URL"'", "status": "'"$DEPLOY_STATUS"'"}'
+        echo '{"app": "'"$CF_APP"'", "url": "'"$APP_URL"'", "status": '$COMPLETED_STEP'}'
         curl -X PUT -s -S\
           "$API_HOST/api/v1/networks/$NETWORK_ID/sample/marbles" \
           -H 'Cache-Control: no-cache' \
           -H 'Content-Type: application/json' \
           -u $API_KEY:$API_SECRET \
-          -d '{"app": "'"$CF_APP"'", "url": "'"$APP_URL"'", "status": "'"$DEPLOY_STATUS"'"}' \
+          -d '{"app": "'"$CF_APP"'", "url": "'"$APP_URL"'", "completed_step": '$COMPLETED_STEP'}' \
           | jq '.' || true
       }
 
@@ -132,7 +132,7 @@ stages:
       export API_SECRET="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].secret' -r)"
       export NETWORK_ID="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].network_id' -r)"
       echo "JQ results: api host=$API_HOST, key=$API_KEY"
-      export DEPLOY_STATUS="received_creds"
+      export COMPLETED_STEP="1"
       update_status
 
       # -----------------------------------------------------------
@@ -151,7 +151,7 @@ stages:
         -F chaincode_id=$CF_APP \
         -F chaincode_version=$TIMESTAMP \
         --connect-timeout 30
-      export DEPLOY_STATUS="installed_cc"
+      export COMPLETED_STEP="2"
       update_status
 
       # -----------------------------------------------------------
@@ -165,7 +165,7 @@ stages:
         -u $API_KEY:$API_SECRET \
         -d '{"chaincode_id":"'"$CF_APP"'", "chaincode_version":"'"$TIMESTAMP"'", "chaincode_arguments":"[\"12345\"]"}' \
         --connect-timeout 120
-      export DEPLOY_STATUS="instantiated_cc"
+      export COMPLETED_STEP="3"
       update_status
 
       # -----------------------------------------------------------
@@ -188,8 +188,8 @@ stages:
       cf start $CF_APP
 
       # -----------------------------------------------------------
-      # 9. Ping IBP that the application is alive
+      # 9. Update IBP that the application is alive
       # -----------------------------------------------------------
-      export DEPLOY_STATUS="sample_up"
+      export COMPLETED_STEP="4"
       update_status
       printf "\n\n --- We are done here. ---\n\n"

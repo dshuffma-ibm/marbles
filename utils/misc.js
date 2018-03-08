@@ -15,16 +15,10 @@ module.exports = function (logger) {
 			} catch (e) {
 				logger.error('VCAP from IBM Cloud is not JSON... this is bad');
 			}
-			//console.log('testing vcap', typeof VCAP, JSON.stringify(VCAP));
 
 			for (let plan_name in VCAP) {
-				console.log('looking at plan', plan_name);
 				if (plan_name.indexOf('blockchain') >= 0) {
 					logger.info('pretty sure this is the IBM Blockchain Platform service:', plan_name);
-					console.log('test 1', VCAP[plan_name][0]);
-					console.log('test 2', VCAP[plan_name][0].credentials);
-					console.log('test 3', VCAP[plan_name][0].credentials.credentials);
-					console.log('test 4', VCAP[plan_name][0].credentials.credentials[0]);
 					if (VCAP[plan_name][0].credentials && VCAP[plan_name][0].credentials.credentials) {	//pull the first one
 						return VCAP[plan_name][0].credentials.credentials[0];		// this should be our connection profile
 					}

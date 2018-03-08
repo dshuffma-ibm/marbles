@@ -12,7 +12,7 @@ module.exports = function (config_filename, logger) {
 	var misc = require(path.join(__dirname, './misc.js'))(logger);
 
 	let cloudy = misc.detectingIbmCloud();
-	if (cloudy) {											// if we are in bluemix, use vcap
+	if (cloudy) {																// if we are in bluemix, use vcap
 		helper.config_path = 'there-is-no-file-using-a-cloud';
 		helper.creds_path = 'there-is-no-file-using-a-cloud';
 		helper.config = {

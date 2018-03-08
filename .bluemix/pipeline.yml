@@ -56,7 +56,7 @@ stages:
           -H 'Content-Type: application/json' \
           -u $API_KEY:$API_SECRET \
           -d '{"app": "'"$CF_APP"'", "url": "'"$APP_URL"'", "completed_step": '$COMPLETED_STEP'}' \
-          | jq '.' || true
+          | ./jq '.' || true
       }
 
       # -----------------------------------------------------------
@@ -75,8 +75,8 @@ stages:
       # 0. Install Things We Need
       # -----------------------------------------------------------
       printf "\n\nInstalling jq for json parsing\n"
-      sudo apt-get update -qq || true
-      sudo apt-get install jq
+      wget -O jq https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
+      chmod +x jq
 
       # -----------------------------------------------------------
       # 1. Test if everything we need is set
@@ -127,10 +127,10 @@ stages:
       cf service-key ${SERVICE_INSTANCE_NAME} ${VCAP_KEY_NAME} > ./config/temp.txt
       tail -n +2 ./config/temp.txt > ./config/marbles_tc.json
       #cat ./config/marbles_tc.json -b             # uncomment this if you are okay with your service creds being logged
-      export API_HOST="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].url' -r)"
-      export API_KEY="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].key' -r)"
-      export API_SECRET="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].secret' -r)"
-      export NETWORK_ID="$(cat ./config/marbles_tc.json | jq '.credentials[0]["x-api"].network_id' -r)"
+      export API_HOST="$(cat ./config/marbles_tc.json | ./jq '.credentials[0]["x-api"].url' -r)"
+      export API_KEY="$(cat ./config/marbles_tc.json | ./jq '.credentials[0]["x-api"].key' -r)"
+      export API_SECRET="$(cat ./config/marbles_tc.json | ./jq '.credentials[0]["x-api"].secret' -r)"
+      export NETWORK_ID="$(cat ./config/marbles_tc.json | ./jq '.credentials[0]["x-api"].network_id' -r)"
       echo "JQ results: api host=$API_HOST, key=$API_KEY"
       export COMPLETED_STEP="1"
       update_status

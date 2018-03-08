@@ -37,6 +37,10 @@ stages:
       {
         if [ "$COMPLETED_STEP" != "4" ]; then
           printf "\n\n --- Uh oh something failed... ---\n"
+          if [ "$COMPLETED_STEP" == "3" ]; then
+            echo "The application failed to start, lets get the cf logs eh?"
+            cf logs $CF_APP --recent
+          fi
           export COMPLETED_STEP="-1"
           if [ "$API_HOST" != "" ]; then
             update_status

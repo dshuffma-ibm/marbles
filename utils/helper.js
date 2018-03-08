@@ -12,8 +12,13 @@ module.exports = function (config_filename, logger) {
 
 	if (process.env.VCAP_SERVICES) {											// if we are in bluemix, use vcap
 		logger.info('Detecting that we are in IBM Cloud');
-		console.log('testing env?', JSON.stringify(process.env));
-		console.log('testing vcap', JSON.stringify(process.env.VCAP_SERVICES));
+		let VCAP = null;
+		try {
+			VCAP = JSON.parse(process.env.VCAP_SERVICES);
+		} catch (e) {
+			logger.error('VCAP from IBM Cloud is not JSON... this is bad');
+		}
+		console.log('testing vcap', typeof VCAP, JSON.stringify(VCAP));
 
 		helper.config_path = 'there-is-no-file-using-a-cloud';
 		helper.creds_path = 'there-is-no-file-using-a-cloud';
@@ -30,17 +35,17 @@ module.exports = function (config_filename, logger) {
 			'port': 3001
 		};
 		let foundCreds = false;
-		/*for (let plan_name in process.env.VCAP_SERVICES) {
+		for (let plan_name in process.env.VCAP) {
 			console.log('looking at plan', plan_name);
 			if (plan_name.indexOf('blockchain') >= 0) {
 				logger.debug('pretty sure this is the IBM Blockchain Platform service:', plan_name);
-				if (process.env.VCAP_SERVICES[plan_name].credentials && process.env.VCAP_SERVICES[plan_name].credentials.credentials) {
-					helper.creds = process.env.VCAP_SERVICES[plan_name].credentials.credentials[0];		// this should be our connection profile
+				if (process.env.VCAP[plan_name].credentials && process.env.VCAP[plan_name].credentials.credentials) {
+					helper.creds = process.env.VCAP[plan_name].credentials.credentials[0];		// this should be our connection profile
 					foundCreds = true;
 					break;
 				}
 			}
-		}*/
+		}
 
 		logger.info('Loaded creds from a IBM Cloud binding', foundCreds);
 	} else {

@@ -15,12 +15,12 @@ module.exports = function (logger) {
 			} catch (e) {
 				logger.error('VCAP from IBM Cloud is not JSON... this is bad');
 			}
-			console.log('testing vcap', typeof VCAP, JSON.stringify(VCAP));
+			//console.log('testing vcap', typeof VCAP, JSON.stringify(VCAP));
 
 			for (let plan_name in VCAP) {
 				console.log('looking at plan', plan_name);
 				if (plan_name.indexOf('blockchain') >= 0) {
-					logger.debug('pretty sure this is the IBM Blockchain Platform service:', plan_name);
+					logger.info('pretty sure this is the IBM Blockchain Platform service:', plan_name);
 					console.log('test 1', VCAP[plan_name][0]);
 					console.log('test 2', VCAP[plan_name][0].credentials);
 					console.log('test 3', VCAP[plan_name][0].credentials.credentials);

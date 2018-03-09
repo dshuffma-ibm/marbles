@@ -15,7 +15,7 @@ template:
     git url: >-
       [https://github.com/dshuffma-ibm/marbles](https://github.com/dshuffma-ibm/marbles)
     git branch: >-
-      [v4.64](https://github.com/dshuffma-ibm/marbles/tree/v4.0)
+      [v4.65](https://github.com/dshuffma-ibm/marbles/tree/v4.0)
 toolchain:
   name: 'marbles-tc-{{timestamp}}'
   template:
@@ -36,7 +36,7 @@ services:
       services:
         - marbles-repo
       name: '{{services.marbles-repo.parameters.repo_name}}'
-      ui-pipeline: true
+      ui-pipeline: false
       configuration:
         content:
           $text: pipeline.yml

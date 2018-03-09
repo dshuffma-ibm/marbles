@@ -33,6 +33,8 @@ stages:
       export TIMESTAMP=$(date +%s)
       export APP_URL="unknown_yet"                    # we correct this later
 
+      echo "what the hell is this ${PROD_REGION_ID}"
+
       detect_exit()
       {
         if [ "$COMPLETED_STEP" != "4" ]; then

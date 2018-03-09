@@ -15,7 +15,7 @@ template:
     git url: >-
       [https://github.com/dshuffma-ibm/marbles](https://github.com/dshuffma-ibm/marbles)
     git branch: >-
-      [v4.67](https://github.com/dshuffma-ibm/marbles/tree/v4.0)
+      [v4.68](https://github.com/dshuffma-ibm/marbles/tree/v4.0)
 toolchain:
   name: 'marbles-tc-{{timestamp}}'
   template:
@@ -44,7 +44,7 @@ services:
           SAMPLE_REPO: marbles-repo
           CF_APP_NAME: '{{form.pipeline.parameters.prod-app-name}}'
           #PROD_SPACE_NAME: '{{form.pipeline.parameters.prod-space}}'
-          PROD_ORG_NAME: '{{form.pipeline.parameters.prod-organization}}'
+          #PROD_ORG_NAME: '{{form.pipeline.parameters.prod-organization}}'
           PROD_REGION_ID: '{{form.pipeline.parameters.prod-region}}'
         execute: true
   marbles-app:
@@ -62,6 +62,7 @@ form:
   pipeline:
     parameters:
       prod-app-name: '{{services.marbles-repo.parameters.repo_name}}'
+      org-name: '{{org_name}}'
       space-name: '{{space_name}}'
     schema:
       $ref: deploy.json

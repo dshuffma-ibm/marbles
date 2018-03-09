@@ -37,7 +37,6 @@
     "required": [
         "prod-region",
         "prod-organization",
-        "prod-space",
         "prod-app-name"
     ],
     "form": [
@@ -97,12 +96,11 @@
                 },
                 {
                     "type": "select",
-					"key": "prod-organization",
-					"readonly": true
+					"key": "prod-organization"
                 },
                 {
                     "type": "text",
-                    "key": "dsh-test",
+                    "key": "space-name",
                     "readonly": true
                 }
             ]

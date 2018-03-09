@@ -97,12 +97,13 @@
                 },
                 {
                     "type": "select",
-                    "key": "prod-organization"
+					"key": "prod-organization",
+					"readonly": true
                 },
                 {
-                    "type": "select",
-                    "key": "prod-space",
-                    "readonly": false
+                    "type": "text",
+                    "key": "dsh-test",
+                    "readonly": true
                 }
             ]
         }

@@ -114,6 +114,7 @@ stages:
       if [ "$SCRIPT_ERROR" == "yep" ]; then
         exit 1
       else
+        printf "Using service instance name '${SERVICE_INSTANCE_NAME}, and Network ID ${NETWORK_ID}'\n"
         echo "All good"
       fi
 

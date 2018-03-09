@@ -16,6 +16,7 @@ module.exports = function (logger) {
 				logger.error('VCAP from IBM Cloud is not JSON... this is bad');
 			}
 
+			console.log('vcap:', JSON.stringify(VCAP, null, 2));
 			for (let plan_name in VCAP) {
 				if (plan_name.indexOf('blockchain') >= 0) {
 					logger.info('pretty sure this is the IBM Blockchain Platform service:', plan_name);

@@ -66,14 +66,14 @@ stages:
       # -----------------------------------------------------------
       # Detect if there is already a service we should use - [ Optional ]
       # -----------------------------------------------------------
-      printf "\n --- Detecting service options ---\n"
-      if [ "$SERVICE_INSTANCE_NAME" != "" ]; then
-        echo "A service instance name was provided, lets use that"
-      else
-        echo "A service instance name was NOT provided, lets use the default one"
-        export SERVICE_INSTANCE_NAME="IBP-$TIMESTAMP"
-      fi
-      printf "Using service instance name '${SERVICE_INSTANCE_NAME}'\n"
+      #printf "\n --- Detecting service options ---\n"
+      #if [ "$SERVICE_INSTANCE_NAME" != "" ]; then
+      #  echo "A service instance name was provided, lets use that"
+      #else
+      #  echo "A service instance name was NOT provided, lets use the default one"
+      #  export SERVICE_INSTANCE_NAME="IBP-$TIMESTAMP"
+      #fi
+      #printf "Using service instance name '${SERVICE_INSTANCE_NAME}'\n"
 
       # -----------------------------------------------------------
       # 0. Install Things We Need
@@ -121,7 +121,7 @@ stages:
       # 2. Create a service instance (this is okay to run if the service name already exists as long as its the same typeof service)
       # -----------------------------------------------------------
       printf "\n --- Creating/checking an instance of the IBM Blockchain Platform service ---\n"
-      cf create-service ${IBP_NAME} ${IBP_PLAN} "${SERVICE_INSTANCE_NAME}"
+      #cf create-service ${IBP_NAME} ${IBP_PLAN} "${SERVICE_INSTANCE_NAME}"
       cf create-service-key "${SERVICE_INSTANCE_NAME}" ${VCAP_KEY_NAME} -c '{"msp_id":"PeerOrg1"}'
 
       # -----------------------------------------------------------

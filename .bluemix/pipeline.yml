@@ -14,6 +14,9 @@ stages:
   - name: SAMPLE_REPO
     value: '{{SAMPLE_REPO}}'
     type: text
+  - name: REGION_ID
+    value: '{{PROD_REGION_ID}}'
+    type: text
   jobs:
   - name: deploy-marbles-app
     type: deployer
@@ -33,7 +36,7 @@ stages:
       export TIMESTAMP=$(date +%s)
       export APP_URL="unknown_yet"                    # we correct this later
 
-      echo "what the hell is this ${PROD_REGION_ID}"
+      echo "what the hell is this ${REGION_ID}"
 
       detect_exit()
       {

@@ -19,8 +19,8 @@ stages:
     type: deployer
     target:
       region_id: ${PROD_REGION_ID}
-      organization: etilabs@us.ibm.com
-      space: dev
+      organization: '{{org_name}}'
+      space: '{{space_name}}'
       application: ${CF_APP_NAME}
     script: |
       #!/bin/bash

@@ -52,7 +52,7 @@ stages:
 
       update_status()
       {
-        echo "Updating Deployment Status"
+        echo "Updating Deployment Status - ${NETWORK_ID}"
         echo '{"app": "'"$CF_APP"'", "url": "'"$APP_URL"'", "status": '$COMPLETED_STEP'}'
         curl -X PUT -s -S\
           "$API_HOST/api/v1/networks/$NETWORK_ID/sample/marbles" \

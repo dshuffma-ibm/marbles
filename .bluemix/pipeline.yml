@@ -121,14 +121,14 @@ stages:
       # 2. Create a service instance (this is okay to run if the service name already exists as long as its the same typeof service)
       # -----------------------------------------------------------
       printf "\n --- Creating/checking an instance of the IBM Blockchain Platform service ---\n"
-      cf create-service ${IBP_NAME} ${IBP_PLAN} ${SERVICE_INSTANCE_NAME}
-      cf create-service-key ${SERVICE_INSTANCE_NAME} ${VCAP_KEY_NAME} -c '{"msp_id":"PeerOrg1"}'
+      cf create-service ${IBP_NAME} ${IBP_PLAN} "'"${SERVICE_INSTANCE_NAME}"'"
+      cf create-service-key "'"${SERVICE_INSTANCE_NAME}"'" ${VCAP_KEY_NAME} -c '{"msp_id":"PeerOrg1"}'
 
       # -----------------------------------------------------------
       # 3. Get service credentials into our file system (remove the first two lines from cf service-key output)
       # -----------------------------------------------------------
       printf "\n --- Getting service credentials ---\n"
-      cf service-key ${SERVICE_INSTANCE_NAME} ${VCAP_KEY_NAME} > ./config/temp.txt
+      cf service-key "'"${SERVICE_INSTANCE_NAME}"'" ${VCAP_KEY_NAME} > ./config/temp.txt
       tail -n +2 ./config/temp.txt > ./config/marbles_tc.json
       #cat ./config/marbles_tc.json -b             # uncomment this if you are okay with your service creds being logged
       export API_HOST="$(cat ./config/marbles_tc.json | ./jq '.credentials[0]["x-api"].url' -r)"
@@ -183,7 +183,7 @@ stages:
       # 7. Bind application to the blockchain service
       # -----------------------------------------------------------
       printf "\n --- Binding the IBM Blockchain Platform service to Marbles ---\n"
-      cf bind-service $CF_APP ${SERVICE_INSTANCE_NAME} -c "{\"permissions\":\"read-only\"}"
+      cf bind-service $CF_APP "'"${SERVICE_INSTANCE_NAME}"'" -c "{\"permissions\":\"read-only\"}"
 
       # -----------------------------------------------------------
       # 8. Start her up

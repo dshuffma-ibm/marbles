@@ -143,6 +143,8 @@ stages:
       # 4. Install and instantiate the chaincode
       # -----------------------------------------------------------
       printf "\n\n --- Installing chaincode ---\n\n"
+      cf set-env $CF_APP CHAINCODE_ID $CF_APP               # pass these to the app so we know which one to use
+      cf set-env $CF_APP CHAINCODE_VERSION $TIMESTAMP
       curl -X POST \
         "$API_HOST/api/v1/networks/$NETWORK_ID/chaincode/install" \
         -H 'Cache-Control: no-cache' \

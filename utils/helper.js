@@ -396,40 +396,50 @@ module.exports = function (config_filename, logger) {
 		throw Error('No channels found in credentials file...');
 	};
 
-	// get the chaincode id on network
+	// get the first chaincode id on the network
 	helper.getChaincodeId = function () {
-		var channel = helper.getFirstChannelId();
-		if (channel && helper.creds.channels[channel] && helper.creds.channels[channel].chaincodes) {
-			if (Array.isArray(helper.creds.channels[channel].chaincodes)) {				// config version 1.0.2 way
-				let chaincode = helper.creds.channels[channel].chaincodes[0];
-				if (chaincode) {
-					return chaincode.split(':')[0];
+		if (process.env.CHAINCODE_ID) {														// detected a preferred chaincode id instead of first
+			console.log('debug: found preferred chaincode id', process.env.CHAINCODE_ID);
+			return process.env.CHAINCODE_ID;
+		} else {																			// else get the first chaincode we see
+			var channel = helper.getFirstChannelId();
+			if (channel && helper.creds.channels[channel] && helper.creds.channels[channel].chaincodes) {
+				if (Array.isArray(helper.creds.channels[channel].chaincodes)) {				// config version 1.0.2 way
+					let chaincode = helper.creds.channels[channel].chaincodes[0];			// first one
+					if (chaincode) {
+						return chaincode.split(':')[0];
+					}
+				} else {
+					let chaincode = Object.keys(helper.creds.channels[channel].chaincodes);	// config version 1.0.0 and 1.0.1 way
+					return chaincode[0];													// first one
 				}
-			} else {
-				let chaincode = Object.keys(helper.creds.channels[channel].chaincodes);	// config version 1.0.0 and 1.0.1 way
-				return chaincode[0];
 			}
+			logger.warn('No chaincode ID found in credentials file... might be okay if we haven\'t instantiated marbles yet');
+			return null;
 		}
-		logger.warn('No chaincode ID found in credentials file... might be okay if we haven\'t instantiated marbles yet');
-		return null;
 	};
 
-	// get the chaincode version on network
+	// get the first chaincode version on the network
 	helper.getChaincodeVersion = function () {
-		var channel = helper.getFirstChannelId();
-		var chaincodeId = helper.getChaincodeId();
-		if (channel && chaincodeId) {
-			if (Array.isArray(helper.creds.channels[channel].chaincodes)) {				// config version 1.0.2 way
-				let chaincode = helper.creds.channels[channel].chaincodes[0];
-				if (chaincode) {
-					return chaincode.split(':')[1];
+		if (process.env.CHAINCODE_VERSION) {												// detected a preferred chaincode version instead of first
+			console.log('debug: found preferred chaincode version', process.env.CHAINCODE_VERSION);
+			return process.env.CHAINCODE_VERSION;
+		} else {																			// else get the first chaincode we see
+			var channel = helper.getFirstChannelId();
+			var chaincodeId = helper.getChaincodeId();
+			if (channel && chaincodeId) {
+				if (Array.isArray(helper.creds.channels[channel].chaincodes)) {				// config version 1.0.2 way
+					let chaincode = helper.creds.channels[channel].chaincodes[0];			// first one
+					if (chaincode) {
+						return chaincode.split(':')[1];
+					}
+				} else {
+					return helper.creds.channels[channel].chaincodes[chaincodeId];			// config version 1.0.0 and 1.0.1 way
 				}
-			} else {
-				return helper.creds.channels[channel].chaincodes[chaincodeId];			// config version 1.0.0 and 1.0.1 way
 			}
+			logger.warn('No chaincode version found in credentials file... might be okay if we haven\'t instantiated marbles yet');
+			return null;
 		}
-		logger.warn('No chaincode version found in credentials file... might be okay if we haven\'t instantiated marbles yet');
-		return null;
 	};
 
 	// get the chaincode id on network

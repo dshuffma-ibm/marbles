@@ -90,7 +90,7 @@
 					}
 				},
 				{
-					"type": "select",
+					"type": "text",
 					"key": "cloud-region",
 					"readonly": true
 				},

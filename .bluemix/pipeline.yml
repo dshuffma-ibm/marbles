@@ -140,7 +140,7 @@ stages:
       export API_KEY="$(cat ./config/marbles_tc.json | ./jq '.credentials[0]["x-api"].key' -r)"
       export API_SECRET="$(cat ./config/marbles_tc.json | ./jq '.credentials[0]["x-api"].secret' -r)"
       export NETWORK_ID="$(cat ./config/marbles_tc.json | ./jq '.credentials[0]["x-api"].network_id' -r)"
-      echo "Using Network ID ${NETWORK_ID}, api host=$API_HOST, api key=$API_KEY""
+      echo "Using Network ID ${NETWORK_ID}, api host=$API_HOST, api key=$API_KEY"
       export COMPLETED_STEP="1"
       update_status
 

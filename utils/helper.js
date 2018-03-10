@@ -393,7 +393,7 @@ module.exports = function (config_filename, logger) {
 				return channels[0];
 			}
 		}
-		throw Error('No channels found in credentials file...');
+		throw Error('No channels found in credentials file... this is problematic. A channel needs to be created before marbles can execute.');
 	};
 
 	// get the first chaincode id on the network

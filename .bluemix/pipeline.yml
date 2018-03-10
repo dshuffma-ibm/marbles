@@ -117,7 +117,7 @@ stages:
       if [ "$SCRIPT_ERROR" == "yep" ]; then
         exit 1
       else
-        echo "Using service instance name '${SERVICE_INSTANCE_NAME}', and Network ID ${NETWORK_ID}"
+        echo "Using service instance name '${SERVICE_INSTANCE_NAME}'"
         echo "Deploying Marbles in region ${CLOUD_REGION_ID}"
         echo "All good"
       fi
@@ -135,12 +135,12 @@ stages:
       printf "\n --- Getting service credentials ---\n"
       cf service-key "${SERVICE_INSTANCE_NAME}" ${VCAP_KEY_NAME} > ./config/temp.txt
       tail -n +2 ./config/temp.txt > ./config/marbles_tc.json
-      cat ./config/marbles_tc.json -b             # uncomment this if you are okay with your service creds being logged
+      #cat ./config/marbles_tc.json -b             # uncomment this if you are okay with your service creds being logged
       export API_HOST="$(cat ./config/marbles_tc.json | ./jq '.credentials[0]["x-api"].url' -r)"
       export API_KEY="$(cat ./config/marbles_tc.json | ./jq '.credentials[0]["x-api"].key' -r)"
       export API_SECRET="$(cat ./config/marbles_tc.json | ./jq '.credentials[0]["x-api"].secret' -r)"
       export NETWORK_ID="$(cat ./config/marbles_tc.json | ./jq '.credentials[0]["x-api"].network_id' -r)"
-      echo "JQ results: api host=$API_HOST, key=$API_KEY"
+      echo "Using Network ID ${NETWORK_ID}, api host=$API_HOST, api key=$API_KEY""
       export COMPLETED_STEP="1"
       update_status
 

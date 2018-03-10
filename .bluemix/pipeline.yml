@@ -14,17 +14,14 @@ stages:
   - name: SAMPLE_REPO
     value: '{{SAMPLE_REPO}}'
     type: text
-  - name: REGION_ID
-    value: '{{PROD_REGION_ID}}'
-    type: text
-  - name: REGION_ID2
-    value: ${PROD_REGION_ID}
+  - name: CLOUD_REGION_ID
+    value: '{{tc_region}}'
     type: text
   jobs:
   - name: deploy-marbles-app
     type: deployer
     target:
-      region_id: ${PROD_REGION_ID}
+      region_id: '{{tc_region}}'
       organization: '{{org_name}}'
       space: '{{space_name}}'
       application: ${CF_APP_NAME}
@@ -38,10 +35,6 @@ stages:
       export CHANNEL="defaultchannel"
       export TIMESTAMP=$(date +%s)
       export APP_URL="unknown_yet"                    # we correct this later
-
-      echo "what the hell is this 1 ${REGION_ID}"
-      echo "what the hell is this 2 ${REGION_ID2}"
-      echo "what the hell is this 3 ${SAMPLE_REPO}"
 
       detect_exit()
       {
@@ -124,7 +117,8 @@ stages:
       if [ "$SCRIPT_ERROR" == "yep" ]; then
         exit 1
       else
-        printf "Using service instance name '${SERVICE_INSTANCE_NAME}', and Network ID ${NETWORK_ID}\n"
+        echo "Using service instance name '${SERVICE_INSTANCE_NAME}', and Network ID ${NETWORK_ID}"
+        echo "Deploying Marbles in region ${CLOUD_REGION_ID}"
         echo "All good"
       fi
 

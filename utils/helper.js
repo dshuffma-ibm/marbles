@@ -11,7 +11,7 @@ module.exports = function (config_filename, logger) {
 	var package_json = require(path.join(__dirname, '../package.json'));		// get release version of marbles from package.json
 	var misc = require(path.join(__dirname, './misc.js'))(logger);
 
-	let cloudy = misc.detectingIbmCloud();
+	let cloudy = misc.getConnectionProfileFromEnv();
 	if (cloudy) {																// if we are in bluemix, use vcap
 		helper.config_path = 'there-is-no-file-using-a-cloud';
 		helper.creds_path = 'there-is-no-file-using-a-cloud';

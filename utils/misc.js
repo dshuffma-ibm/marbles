@@ -35,7 +35,8 @@ module.exports = function (logger) {
 		if (process.env.CONNECTION_PROFILE) {
 			try {
 				const cp = JSON.parse(process.env.CONNECTION_PROFILE);
-				console.log('cp:', typeof cp, JSON.stringify(cp, null, 2));
+				console.log('cp:', typeof cp, Object.keys(cp));
+				process.env.creds_filename = 'there-is-no-file-using-a-cloud';
 				return cp;
 			} catch (e) {
 				logger.error('CONNECTION_PROFILE from IBM Cloud is not JSON... this is bad');

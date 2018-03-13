@@ -143,7 +143,6 @@ if (config_error) {
 } else {
 	broadcast_state('checklist', 'success');		//checklist step is done
 	console.log('\n');
-	logger.info('Using settings in ' + process.env.creds_filename + ' to see if we have launch marbles before...');
 
 	// --- Go Go Enrollment --- //
 	enroll_admin(1, function (e) {

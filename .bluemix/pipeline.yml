@@ -29,18 +29,16 @@ stages:
       #!/bin/bash
       trap 'detect_exit' 0 1 2 3 6
 
-      export IBP_NAME="ibm-blockchain-5-dev"
-      export IBP_PLAN="ibm-blockchain-plan-v1-starter-dev"
       export VCAP_KEY_NAME="marbles_tc_creds"
-      export CHANNEL="defaultchannel"
+      export CHANNEL_ID="defaultchannel"
       export TIMESTAMP=$(date +%s)
       export APP_URL="unknown_yet"                    # we correct this later
 
       detect_exit()
       {
-        if [ "$COMPLETED_STEP" != "4" ]; then
+        if [ "$COMPLETED_STEP" != "5" ]; then
           printf "\n\n --- Uh oh something failed... ---\n"
-          if [ "$COMPLETED_STEP" == "3" ]; then
+          if [ "$COMPLETED_STEP" == "4" ]; then
             echo "The application failed to start, lets get the cf logs eh?"
             cf logs $CF_APP --recent
           fi
@@ -55,8 +53,7 @@ stages:
 
       update_status()
       {
-        echo "Updating Deployment Status - ${NETWORK_ID}"
-        echo '{"app": "'"$CF_APP"'", "url": "'"$APP_URL"'", "status": '$COMPLETED_STEP'}'
+        echo "Updating Sample's Deployment Status - network id: ${NETWORK_ID}, app: $CF_APP, status: $COMPLETED_STEP"
         curl -X PUT -s -S\
           "$API_HOST/api/v1/networks/$NETWORK_ID/sample/marbles" \
           -H 'Cache-Control: no-cache' \
@@ -67,37 +64,17 @@ stages:
       }
 
       # -----------------------------------------------------------
-      # Detect if there is already a service we should use - [ Optional ]
-      # -----------------------------------------------------------
-      #printf "\n --- Detecting service options ---\n"
-      #if [ "$SERVICE_INSTANCE_NAME" != "" ]; then
-      #  echo "A service instance name was provided, lets use that"
-      #else
-      #  echo "A service instance name was NOT provided, lets use the default one"
-      #  export SERVICE_INSTANCE_NAME="IBP-$TIMESTAMP"
-      #fi
-      #printf "Using service instance name '${SERVICE_INSTANCE_NAME}'\n"
-
-      # -----------------------------------------------------------
-      # 0. Install Things We Need
+      # Install Things We Need
       # -----------------------------------------------------------
       printf "\n\nInstalling jq for json parsing\n"
       wget -O jq https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
       chmod +x jq
 
       # -----------------------------------------------------------
-      # 1. Test if everything we need is set
+      # Test if everything we need is set
       # -----------------------------------------------------------
       printf "\n --- Testing if the script has what it needs ---\n"
       export SCRIPT_ERROR="nope"
-        if [ "$IBP_NAME" == "" ]; then
-        echo "Error - bad script setup - IBP_NAME was not provided (IBM Blockchain service name)"
-        export SCRIPT_ERROR="yep"
-      fi
-      if [ "$IBP_PLAN" == "" ]; then
-        echo "Error - bad script setup - IBP_PLAN was not provided (IBM Blockchain service's plan name)"
-        export SCRIPT_ERROR="yep"
-      fi
       if [ "$VCAP_KEY_NAME" == "" ]; then
         echo "Error - bad script setup - VCAP_KEY_NAME was not provided (Bluemix service credential key name)"
         export SCRIPT_ERROR="yep"
@@ -110,8 +87,8 @@ stages:
         echo "Error - bad script setup - CF_APP was not provided (Marbles application name)"
         export SCRIPT_ERROR="yep"
       fi
-      if [ "$CHANNEL" == "" ]; then
-        echo "Error - bad script setup - CHANNEL was not provided (name of the channel to use)"
+      if [ "$CHANNEL_ID" == "" ]; then
+        echo "Error - bad script setup - CHANNEL_ID was not provided (name of the channel to use)"
         export SCRIPT_ERROR="yep"
       fi
       if [ "$SCRIPT_ERROR" == "yep" ]; then
@@ -123,29 +100,29 @@ stages:
       fi
 
       # -----------------------------------------------------------
-      # 2. Create a service instance (this is okay to run if the service name already exists as long as its the same typeof service)
+      # 1. Create service creds for the service instance
       # -----------------------------------------------------------
-      printf "\n --- Creating/checking an instance of the IBM Blockchain Platform service ---\n"
-      #cf create-service ${IBP_NAME} ${IBP_PLAN} "${SERVICE_INSTANCE_NAME}"
-      cf create-service-key "${SERVICE_INSTANCE_NAME}" ${VCAP_KEY_NAME} -c '{"msp_id":"PeerOrg1"}'
+      printf "\n --- Creating service credentials for your IBM Blockchain Platform service ---\n"
+      cf delete-service-key "${SERVICE_INSTANCE_NAME}" ${VCAP_KEY_NAME} -f || true                    # remove an old key if it exists (stale)
+      cf create-service-key "${SERVICE_INSTANCE_NAME}" ${VCAP_KEY_NAME} -c '{"msp_id":"PeerOrg1"}'    # create a new/updated key
 
       # -----------------------------------------------------------
-      # 3. Get service credentials into our file system (remove the first two lines from cf service-key output)
+      # Get service credentials into our file system (remove the first two lines from cf service-key output)
       # -----------------------------------------------------------
       printf "\n --- Getting service credentials ---\n"
-      cf service-key "${SERVICE_INSTANCE_NAME}" ${VCAP_KEY_NAME} > ./config/temp.txt
+      cf service-key "${SERVICE_INSTANCE_NAME}" ${VCAP_KEY_NAME} > ./config/temp.txt                # load the key
       tail -n +2 ./config/temp.txt > ./config/marbles_tc.json
       #cat ./config/marbles_tc.json -b             # uncomment this if you are okay with your service creds being logged
-      export API_HOST="$(cat ./config/marbles_tc.json | ./jq '.credentials[0]["x-api"].url' -r)"
-      export API_KEY="$(cat ./config/marbles_tc.json | ./jq '.credentials[0]["x-api"].key' -r)"
-      export API_SECRET="$(cat ./config/marbles_tc.json | ./jq '.credentials[0]["x-api"].secret' -r)"
-      export NETWORK_ID="$(cat ./config/marbles_tc.json | ./jq '.credentials[0]["x-api"].network_id' -r)"
+      export API_HOST="$(cat ./config/marbles_tc.json | jq .$(cat ./config/marbles_tc.json | jq 'keys'[0] -r).url -r)"    # use the first entry
+      export API_KEY="$(cat ./config/marbles_tc.json | jq .$(cat ./config/marbles_tc.json | jq 'keys'[0] -r).key -r)"
+      export API_SECRET="$(cat ./config/marbles_tc.json | jq .$(cat ./config/marbles_tc.json | jq 'keys'[0] -r).secret -r)"
+      export NETWORK_ID="$(cat ./config/marbles_tc.json | jq .$(cat ./config/marbles_tc.json | jq 'keys'[0] -r).network_id -r)"
       echo "Using Network ID ${NETWORK_ID}, api host=$API_HOST, api key=$API_KEY"
       export COMPLETED_STEP="1"
       update_status
 
       # -----------------------------------------------------------
-      # 4. Install and instantiate the chaincode
+      # 2. Install the chaincode
       # -----------------------------------------------------------
       printf "\n\n --- Installing chaincode ---\n\n"
       curl -X POST \
@@ -159,48 +136,94 @@ stages:
         -F 'files[]=@./chaincode/src/marbles/write_ledger.go' \
         -F chaincode_id=$CF_APP \
         -F chaincode_version=$TIMESTAMP \
-        --connect-timeout 30
+        --connect-timeout 60
       export COMPLETED_STEP="2"
       update_status
 
       # -----------------------------------------------------------
-      # 5. Instantiate the chaincode
+      # 3. Instantiate the chaincode - repeat 3x if needed
       # -----------------------------------------------------------
-      printf "\n\n --- Instantiating chaincode on channel $CHANNEL ---\n\n"
-      curl -X POST \
-        "$API_HOST/api/v1/networks/$NETWORK_ID/channels/$CHANNEL/chaincode/instantiate" \
-        -H 'Cache-Control: no-cache' \
-        -H 'Content-Type: application/json' \
-        -u $API_KEY:$API_SECRET \
-        -d '{"chaincode_id":"'"$CF_APP"'", "chaincode_version":"'"$TIMESTAMP"'", "chaincode_arguments":"[\"12345\"]"}' \
-        --connect-timeout 120
+      i=0
+      while [[ "$INSTANTIATED" != "ok" && "$i" -lt "3" ]]
+      do
+        printf "\n\n --- Instantiating chaincode on channel $CHANNEL_ID (attempt $[$i+1]) ---\n\n"
+        sleep $[$i*6+1]s
+        INSTANTIATE_RESP=$(curl -X POST \
+          "$API_HOST/api/v1/networks/$NETWORK_ID/channels/$CHANNEL_ID/chaincode/instantiate" \
+          -H 'Cache-Control: no-cache' \
+          -H 'Content-Type: application/json' \
+          -u $API_KEY:$API_SECRET \
+          -d '{"chaincode_id":"'"$CF_APP"'", "chaincode_version":"'"$TIMESTAMP"'", "chaincode_arguments":"[\"12345\"]"}' \
+          --connect-timeout 180)
+        echo "$INSTANTIATE_RESP" | jq . || true
+        INSTANTIATED=$(echo "$INSTANTIATE_RESP" | jq '.message' -r)
+        i=$[$i+1]
+      done
+
+      if [ "$INSTANTIATED" != "ok" ]; then
+        echo "$INSTANTIATE_RESP"
+        echo "Could not instantiate the chaincode... check peer logs"
+        exit 1;
+      else
+        echo "Instantiate was successful, congrats"
+      fi
+
       export COMPLETED_STEP="3"
       update_status
 
       # -----------------------------------------------------------
-      # 6. Push application (don't start yet, wait for binding)
+      # 4. Get connection profile - repeat 3x in case of connection resets
+      # -----------------------------------------------------------
+      i=0
+      while [[ "$CP_CHANNEL_ID" != "membership_valid" && "$i" -lt "3" ]]
+      do
+        printf "\n\n --- Get the connection profile (attempt $[$i+1]) ---\n\n"
+        sleep $[$i*8+1]s
+        export CONNECTION_PROFILE=$(curl -X GET \
+                  "$API_HOST/api/v1/networks/$NETWORK_ID/connection_profile" \
+                  -H 'Content-Type: application/json' \
+                  -u $API_KEY:$API_SECRET\
+                  --connect-timeout 90)
+        CP_CHANNEL_ID=$(echo "$CONNECTION_PROFILE" | jq '.channels["'$CHANNEL_ID'"]["x-status"]' -r)
+        i=$[$i+1]
+      done
+
+      if [ "$CP_CHANNEL_ID" != "membership_valid" ]; then
+        echo "Error - Connection Profile does not look healthy. Channel '$CHANNEL_ID' does not exist"
+        exit 1;
+      else
+        echo "Connection Profile looks great. Has channel '$CHANNEL_ID'"
+      fi
+
+      #echo "got connection profile $CONNECTION_PROFILE"      # uncomment if you are okay with logging your connection profile
+      export COMPLETED_STEP="4"
+      update_status
+
+      # -----------------------------------------------------------
+      # 5. Push application and Bind the service
       # -----------------------------------------------------------
       printf "\n --- Creating the Marbles application ---\n"
-      cf push $CF_APP --no-start
+      cf push $CF_APP --no-start                            # don't start yet, wait for binding
+
+      echo "Creating env variables for mables..."
+      cf set-env $CF_APP CONNECTION_PROFILE "$CONNECTION_PROFILE" > /dev/null
       cf set-env $CF_APP CHAINCODE_ID $CF_APP               # pass these to the app so we know which one to use
       cf set-env $CF_APP CHAINCODE_VERSION $TIMESTAMP
+      cf set-env $CF_APP CHANNEL_ID $CHANNEL_ID
       export APP_URL=$(cf app $CF_APP | grep -Po "(?<=routes:)\s*\S*")
 
-      # -----------------------------------------------------------
-      # 7. Bind application to the blockchain service
-      # -----------------------------------------------------------
       printf "\n --- Binding the IBM Blockchain Platform service to Marbles ---\n"
-      cf bind-service $CF_APP "${SERVICE_INSTANCE_NAME}" -c "{\"permissions\":\"read-only\"}"
+      cf bind-service $CF_APP "${SERVICE_INSTANCE_NAME}" -c "{\"permissions\":\"read-only\"}"   # bind marbles to the service
 
       # -----------------------------------------------------------
-      # 8. Start her up
+      # Start her up
       # -----------------------------------------------------------
       printf "\n --- Starting Marbles ---\n"
       cf start $CF_APP
 
       # -----------------------------------------------------------
-      # 9. Update IBP that the application is alive
+      # Update IBP that the application is alive
       # -----------------------------------------------------------
-      export COMPLETED_STEP="4"
+      export COMPLETED_STEP="5"
       update_status
       printf "\n\n --- We are done here. ---\n\n"

@@ -3,7 +3,7 @@ stages:
 - name: Deploy Marbles Application
   inputs:
   - type: git
-    branch: v4.0
+    branch: master
     service: ${SAMPLE_REPO}
   triggers:
   - type: commit

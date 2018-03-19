@@ -57,7 +57,7 @@ stages:
 
       update_status()
       {
-        echo "Updating Sample's Deployment Status - network id: ${NETWORK_ID}, app: $CF_APP, status: $COMPLETED_STEP"
+        echo "Updating Sample's Deployment Status - network id: '${NETWORK_ID}', app: '$CF_APP', status: '$COMPLETED_STEP'"
         curl -X PUT -s -S\
           "$API_HOST/api/v1/networks/$NETWORK_ID/sample/marbles" \
           -H 'Cache-Control: no-cache' \
@@ -125,7 +125,7 @@ stages:
       export API_HOST="$(cat ./config/marbles_tc.json | jq '.'$MSP_ID'.url' -r)"    # use the msp id from the env var
       export API_KEY="$(cat ./config/marbles_tc.json | jq '.'$MSP_ID'.key' -r)"
       export API_SECRET="$(cat ./config/marbles_tc.json | jq '.'$MSP_ID'.secret' -r)"
-      export NETWORK_ID="$(cat ./config/marbles_tc.json | jq '.'$MSP_ID'network_id' -r)"
+      export NETWORK_ID="$(cat ./config/marbles_tc.json | jq '.'$MSP_ID'.network_id' -r)"
       echo "Using Network ID ${NETWORK_ID}, api host=$API_HOST, api key=$API_KEY"
       export COMPLETED_STEP="1"
       update_status
@@ -219,6 +219,7 @@ stages:
       cf set-env $CF_APP CHAINCODE_ID $CF_APP               # pass these to the app so we know which one to use
       cf set-env $CF_APP CHAINCODE_VERSION $TIMESTAMP
       cf set-env $CF_APP CHANNEL_ID $CHANNEL_ID
+      cf set-env $CF_APP MSP_ID $MSP_ID
       export APP_URL=$(cf app $CF_APP | grep -Po "(?<=routes:)\s*\S*")
 
       printf "\n --- Binding the IBM Blockchain Platform service to Marbles ---\n"

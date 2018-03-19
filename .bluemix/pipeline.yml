@@ -37,6 +37,7 @@ stages:
       export CHANNEL_ID="defaultchannel"
       export TIMESTAMP=$(date +%s)
       export APP_URL="unknown_yet"                    # we correct this later
+      GIT_HASH=$(git rev-parse HEAD)
 
       detect_exit()
       {
@@ -63,7 +64,7 @@ stages:
           -H 'Cache-Control: no-cache' \
           -H 'Content-Type: application/json' \
           -u $API_KEY:$API_SECRET \
-          -d '{"app": "'"$CF_APP"'", "url": "'"$APP_URL"'", "completed_step": '$COMPLETED_STEP'}' \
+          -d '{"app": "'"$CF_APP"'", "url": "'"$APP_URL"'", "completed_step": '$COMPLETED_STEP', "meta": { "commit_level": "'"$GIT_HASH"'" } }' \
           | ./jq '.' || true
       }
 
@@ -77,7 +78,15 @@ stages:
       # -----------------------------------------------------------
       # Test if everything we need is set
       # -----------------------------------------------------------
-      printf "\n --- Testing if the script has what it needs ---\n"
+      printf "\n\n\n"
+      echo " __  __               _      _             "
+      echo "|  \/  |             | |    | |            "
+      echo "| \  / |  __ _  _ __ | |__  | |  ___  ___  "
+      echo "| |\/| | / _  || '__|| '_ \ | | / _ \/ __| "
+      echo "| |  | || (_| || |   | |_) || ||  __/\__ \ "
+      echo "|_|  |_| \__,_||_|   |_.__/ |_| \___||___/ "
+
+      printf "\n\n --- Testing if the script has what it needs --- \n"
       export SCRIPT_ERROR="nope"
       if [ "$VCAP_KEY_NAME" == "" ]; then
         echo "Error - bad script setup - VCAP_KEY_NAME was not provided (Bluemix service credential key name)"
@@ -105,7 +114,8 @@ stages:
         echo "Using service instance name: '${SERVICE_INSTANCE_NAME}'"
         echo "Deploying Marbles in region: ${CLOUD_REGION_ID}"
         echo "Deploying Marbles as msp id: ${MSP_ID}"
-        echo "All good"
+        echo "Deploying Marbles commit level: ${GIT_HASH}"
+        printf "\nAll good\n\n"
       fi
 
       # -----------------------------------------------------------

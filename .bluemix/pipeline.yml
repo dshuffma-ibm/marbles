@@ -3,7 +3,7 @@ stages:
 - name: Deploy Marbles Application
   inputs:
   - type: git
-    branch: master
+    branch: v4.0
     service: ${SAMPLE_REPO}
   triggers:
   - type: commit
@@ -17,6 +17,10 @@ stages:
   - name: CLOUD_REGION_ID
     value: '{{tc_region}}'
     type: text
+  - name: MSP_ID
+    value: '{{msp_id}}'
+    type: text
+
   jobs:
   - name: deploy-marbles-app
     type: deployer
@@ -91,11 +95,16 @@ stages:
         echo "Error - bad script setup - CHANNEL_ID was not provided (name of the channel to use)"
         export SCRIPT_ERROR="yep"
       fi
+      if [ "$MSP_ID" == "" ]; then
+        echo "Error - bad script setup - MSP_ID was not provided (id of the org on the network to use)"
+        export SCRIPT_ERROR="yep"
+      fi
       if [ "$SCRIPT_ERROR" == "yep" ]; then
         exit 1
       else
-        echo "Using service instance name '${SERVICE_INSTANCE_NAME}'"
-        echo "Deploying Marbles in region ${CLOUD_REGION_ID}"
+        echo "Using service instance name: '${SERVICE_INSTANCE_NAME}'"
+        echo "Deploying Marbles in region: ${CLOUD_REGION_ID}"
+        echo "Deploying Marbles as msp id: ${MSP_ID}"
         echo "All good"
       fi
 
@@ -103,8 +112,8 @@ stages:
       # 1. Create service creds for the service instance
       # -----------------------------------------------------------
       printf "\n --- Creating service credentials for your IBM Blockchain Platform service ---\n"
-      cf delete-service-key "${SERVICE_INSTANCE_NAME}" ${VCAP_KEY_NAME} -f || true                    # remove an old key if it exists (stale)
-      cf create-service-key "${SERVICE_INSTANCE_NAME}" ${VCAP_KEY_NAME} -c '{"msp_id":"PeerOrg1"}'    # create a new/updated key
+      cf delete-service-key "${SERVICE_INSTANCE_NAME}" ${VCAP_KEY_NAME} -f || true               # remove an old key if it exists (stale)
+      cf create-service-key "${SERVICE_INSTANCE_NAME}" ${VCAP_KEY_NAME}                          # create a new/updated key
 
       # -----------------------------------------------------------
       # Get service credentials into our file system (remove the first two lines from cf service-key output)
@@ -113,10 +122,10 @@ stages:
       cf service-key "${SERVICE_INSTANCE_NAME}" ${VCAP_KEY_NAME} > ./config/temp.txt                # load the key
       tail -n +2 ./config/temp.txt > ./config/marbles_tc.json
       #cat ./config/marbles_tc.json -b             # uncomment this if you are okay with your service creds being logged
-      export API_HOST="$(cat ./config/marbles_tc.json | jq .$(cat ./config/marbles_tc.json | jq 'keys'[0] -r).url -r)"    # use the first entry
-      export API_KEY="$(cat ./config/marbles_tc.json | jq .$(cat ./config/marbles_tc.json | jq 'keys'[0] -r).key -r)"
-      export API_SECRET="$(cat ./config/marbles_tc.json | jq .$(cat ./config/marbles_tc.json | jq 'keys'[0] -r).secret -r)"
-      export NETWORK_ID="$(cat ./config/marbles_tc.json | jq .$(cat ./config/marbles_tc.json | jq 'keys'[0] -r).network_id -r)"
+      export API_HOST="$(cat ./config/marbles_tc.json | jq '.'$MSP_ID'.url' -r)"    # use the msp id from the env var
+      export API_KEY="$(cat ./config/marbles_tc.json | jq '.'$MSP_ID'.key' -r)"
+      export API_SECRET="$(cat ./config/marbles_tc.json | jq '.'$MSP_ID'.secret' -r)"
+      export NETWORK_ID="$(cat ./config/marbles_tc.json | jq '.'$MSP_ID'network_id' -r)"
       echo "Using Network ID ${NETWORK_ID}, api host=$API_HOST, api key=$API_KEY"
       export COMPLETED_STEP="1"
       update_status

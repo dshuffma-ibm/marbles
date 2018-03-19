@@ -41,7 +41,7 @@ The actual number you provide to marbles is meaningless, go nuts.
 <a name="ha"></a>
 
 ### Q. How can I create a HA(high-availability) setup
-The latest and greatest marbles already does this! Checkout the `fc wrangler` files: [high_availability.js](../utils/fc_wrangler/high_availability.js) and [index.js](../utils/fc_wrangler/index.js). The code snippet below shows that when an invoke fails, we call `ha.switch_peer()` to send the same call to the next peer. Remember that the SDK is configured to send requests to specific peers, so all we have to do is change this peer. You may find the comments in the code below helpful.
+The latest and greatest marbles already does this! Checkout the `fc wrangler` files: [high_availability.js](../utils/fc_wrangler/parts/high_availability.js) and [index.js](../utils/fc_wrangler/index.js). The code snippet below shows that when an invoke fails, we call `ha.switch_peer()` to send the same call to the next peer. Remember that the SDK is configured to send requests to specific peers, so all we have to do is change this peer. You may find the comments in the code below helpful.
 
 Note that the function `ha.switch_peer()` returns null when we have looped through all the peers.  The code then returns and sends the last error.
 
@@ -54,7 +54,7 @@ __./utils/fc_wrangler/index.js__
 					logger.info('Retrying invoke on different peer');
 					fcw.invoke_chaincode(obj, options, cb_done);
 				} else {
-					if (cb_done) cb_done(err, resp);           //out of peers, give up, send err
+					if (cb_done) cb_done(err, resp);     //out of peers, give up, send err
 				}
 			} else {                                               //success
 				ha.success_peer_position = ha.using_peer_position; //remember the last good peer

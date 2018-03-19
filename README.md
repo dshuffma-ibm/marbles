@@ -10,35 +10,6 @@
 
 ***
 
-[![Deploy To Bluemix](/.bluemix/create_marbles_tc_new_button.png)](https://console.stage1.bluemix.net/devops/setup/deploy/?repository=https%3A//github.com/dshuffma-ibm/marbles&branch=v4.0)
-or [![Deploy To Bluemix](/.bluemix/create_marbles_tc_existing_button.png)](https://console.stage1.bluemix.net/devops/setup/deploy/?repository=https%3A//github.com/dshuffma-ibm/marbles&branch=v4.0&redirect_uri=https%3A//ibmblockchain-staging-v2.stage1.ng.bluemix.net/network/93b420b764074a0d98943da89f3d8820/demos)
-
-***
-
-##### Versions and Supported Platforms
-Please note there are multiple version of marbles.
-One marbles branch for each major Hyperledger Fabric release.
-Pick a version of marbles that is compatible with your version of Fabric.
-If you don't have any version of Fabric, then pick the marbles version marked **latest**!
-
-- Marbles - Branch v4.0 **(Latest)** (You are viewing this branch!)
-	- Works with Hyperledger Fabric  `v1.0.1`, `v1.0.0` and `v1.0.0-rc1`
-	- Works with the IBM Blockchain Bluemix Service - Plan **IBM Blockchain Platform - Enterprise**
-
-- [Marbles - Branch v3.0](https://github.com/ibm-blockchain/marbles/tree/v3.0) **(Deprecated)**
-	- Works with Hyperledger Fabric `v1.0.0-alpha`
-	- No longer supported by the IBM Blockchain Bluemix service
-
-- [Marbles - Branch v2.0](https://github.com/ibm-blockchain/marbles/tree/v2.0) **(Deprecated)**
-	- Works with Hyperledger Fabric `v0.6.1-preview`
-	- Works with IBM Blockchain Bluemix Service - Plan **Starter** or **HSBN**
-
-- [Marbles - Branch v1.0](https://github.com/ibm-blockchain/marbles/tree/v1.0) **(Deprecated)**
-	- Works with Hyperledger Fabric `v0.5-developer-preview`
-	- No longer supported by the IBM Blockchain Bluemix service
-
-***
-
 # Application Background
 
 Hold on to your hats everyone, this application is going to demonstrate transferring marbles between many marble owners leveraging Hyperledger Fabric.
@@ -56,8 +27,8 @@ Attributes of a marble:
   3. size (int, size in mm)
   4. owner (string)
 
-We are going to create a Web based UI that can set these values and store them in our blockchain.
-The marble gets created in the blockchain storage aka ledger as a key value pair.
+We are going to create a UI that can set these values and store them in our blockchain's ledger.
+The marble is really a key value pair.
 The `key` is the marble id, and the `value` is a JSON string containing the attributes of the marble (listed above).
 Interacting with the cc is done by using the gRPC protocol to a peer on the network.
 The details of the gRPC protocol are taken care of by an SDK called [Hyperledger Fabric Client](https://www.npmjs.com/package/fabric-client) SDK.
@@ -74,20 +45,6 @@ Check the picture below for topology details.
 1. Marbles (via the SDK) will then send the endorsed proposal to the ordering service.  The orderer will package many proposals from the whole network into a block.  Then it will broadcast the new block to peers in the network.
 1. Finally the peer will validate the block and write it to its ledger. The transaction has now taken effect and any subsequent reads will reflect this change.
 
-### Context Clues
-There are 3 distinct parts/worlds that you need to keep straight.
-They should be thought of as isolated environments that communicate with each other.
-This walk through will jump from one to another as we setup and explain each part.
-It's important to identify which part is which.
-There are certain keywords and context clues to help you identify one from another.
-
-1. The Chaincode Part - This is GoLang code that runs on/with a peer on your blockchain network. Also, called `cc`. All marbles/blockchain interactions ultimately happen here. These files live in `/chaincode`.
-1. The Client Side JS Part - This is JavaScript code running in the user's browser. User interface interaction happens here. These files live in `/public/js.`
-1. The Server Side JS Part - This is JavaScript code running our application's backend. ie `Node.js` code which is the heart of Marbles! Sometimes referred to as our `node` or `server` code. Functions as the glue between the marble admin and our blockchain. These files live in `/utils` and `/routes`.
-
-Remember these 3 parts are isolated from each other.
-They do not share variables nor functions.
-They will communicate via a networking protocol such as gRPC or WebSockets.
 ***
 
 # Marbles Setup
@@ -236,9 +193,12 @@ Let’s look at the operations involved when creating a new marble.
 
 # SDK Deeper Dive
 Now lets see how we interface with the Fabric Client SDK.
-Most of the configuration options can be found in `/config/blockchain_creds_tls.json`.
-This file list the hostname (or ip) and port of various components of our blockchain network.
-The `helper` functions will retrieve IPs and ports from the configuration file.
+Almost all of the configuration options can be found in our "connection profile" (aka cp).
+Your connection profile might be coming from a file such as`/config/blockchain_creds_tls.json`, or it might be from an environmental variable.
+If you are unsure which, check the logs when marbles starts.
+You will either see `Loaded connection profile from an environmental variable` or `Loaded connection profile file <some name here>`.
+The cp is JSON and it has the hostname (or ip) and port of various components of our blockchain network.
+The `connection_profile_lib` found in the `./utils` folder, has functions to retrieve data for the SDK.
 
 ### Configure SDK:
 First action is to enroll the admin.  Look at the following code snippet on enrollment.  There are comments/instructions below the code.
@@ -300,6 +260,17 @@ Step 4. After successful enrollment we set the orderer URL.  The orderer is not 
 Step 5. Next we set the Peer URLs. These are also not needed yet, but we are going to setup our SDK chain object fully.
 
 Step 6. At this point the SDK is fully configured and ready to interact with the blockchain.
+
+### Code Structure
+This application has 3 coding environments to juggle.
+
+1. The Chaincode Part - This is GoLang code that runs on/with a peer on your blockchain network. Also, called `cc`. All marbles/blockchain transactions ultimately happen here. These files live in `/chaincode`.
+1. The **Client** Side JS Part - This is JavaScript code running in the user's browser. User interface interaction happens here. These files live in `/public/js.`
+1. The **Server** Side JS Part - This is JavaScript code running our application's backend. ie `Node.js` code which is the heart of Marbles! Sometimes referred to as our `node` or `server` code. Functions as the glue between the marble admin and our blockchain. These files live in `/utils` and `/routes`.
+
+Remember these 3 parts are isolated from each other.
+They do not share variables nor functions.
+They will communicate via a networking protocol such as gRPC, WebSockets, or HTTP.
 
 # Marbles Deeper Dive
 Hopefully you have successfully traded a marble or two between users.
@@ -393,10 +364,10 @@ __/utils/websocket_server_side.js__
 ```js
     //process web socket messages
     ws_server.process_msg = function (ws, data) {
-        const channel = helper.getFirstChannelId();
-        const first_peer = helper.getFirstPeerName(channel);
+        const channel = cp.getFirstChannelId();
+        const first_peer = cp.getFirstPeerName(channel);
         var options = {
-            peer_urls: [helper.getPeersUrl(first_peer)],
+            peer_urls: [cp.getPeersUrl(first_peer)],
             ws: ws,
             endorsed_hook: endorse_hook,
             ordered_hook: orderer_hook

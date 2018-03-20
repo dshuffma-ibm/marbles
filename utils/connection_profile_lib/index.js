@@ -193,7 +193,7 @@ module.exports = function (config_filename, logger) {
 			const first_ca = cp.getFirstCaName(org_2_use);
 			const first_peer = cp.getFirstPeerName(channel);
 			const first_orderer = cp.getFirstOrdererName(channel);
-			const org_name = cp.getOrgsMSPid(org_2_use);				//lets use the first org we find
+			const org_name = cp.getClientOrg();
 			const user_obj = cp.getEnrollObj(first_ca, userIndex);		//there may be multiple users
 			return {
 				channel_id: channel,
@@ -216,10 +216,9 @@ module.exports = function (config_filename, logger) {
 	// build the enrollment options using an admin cert
 	cp.makeEnrollmentOptionsUsingCert = function () {
 		const channel = cp.getChannelId();
-		const org_2_use = cp.getClientOrg();
 		const first_peer = cp.getFirstPeerName(channel);
 		const first_orderer = cp.getFirstOrdererName(channel);
-		const org_name = cp.getOrgsMSPid(org_2_use);		//lets use the first org we find
+		const org_name = cp.getClientOrg();
 		return {
 			channel_id: channel,
 			uuid: cp.makeUniqueId(),

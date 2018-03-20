@@ -136,7 +136,6 @@ process.on('uncaughtException', function (err) {
 // - the steps below will run when the application starts, they are mildly interesting
 // - these steps will test the ability to communicate with marbles chaincode on your blockchain network
 // ------------------------------------------------------------------------------------------------------------------------------
-process.env.app_first_setup = 'yes';						// init
 let config_error = cp.checkConfig();
 setupWebSocket();											// http server is already up, make the ws one now
 

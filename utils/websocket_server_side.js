@@ -37,7 +37,6 @@ module.exports = function (cp, fcw, logger) {
 		return {
 			msg: 'app_state',
 			state: start_up_states,
-			first_setup: process.env.app_first_setup
 		};
 	};
 

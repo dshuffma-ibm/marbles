@@ -38,6 +38,35 @@ module.exports = function (cp, logger) {
 		return null;
 	};
 
+	// get the marble usernames from the cp or config file
+	helper.getMarbleUsernames = function () {
+		if (cp.using_env) {
+			let org = cp.getClientOrg();
+			if (org) org = org.toLowerCase();
+			else org = '-';
+
+			if (org.indexOf('org1') >= 0) {
+				return ['amy', 'alice', 'ava'];
+			} else if (org.indexOf('org2') >= 0) {
+				return ['andre', 'andrew', 'aaron'];
+			} else if (org.indexOf('org3') >= 0) {
+				return ['alexa', 'alex', 'alexandra'];
+			} else if (org.indexOf('org4') >= 0) {
+				return ['adam', 'abraham', 'anthony'];
+			} else if (org.indexOf('org5') >= 0) {
+				return ['anjolie', 'april', 'alita'];
+			} else if (org.indexOf('org6') >= 0) {
+				return ['ace', 'ali', 'allen'];
+			} else if (org.indexOf('org7') >= 0) {
+				return ['ann', 'anne', 'anna'];
+			} else if (org.indexOf('org8') >= 0) {
+				return ['al', 'albert', 'david'];
+			}
+		}
+
+		return cp.getMarbleUsernamesConfig();		// fallback use config file
+	};
+
 	// get this org's msp id
 	helper.getOrgsMSPid = function (key) {
 		if (key === undefined || key == null) {

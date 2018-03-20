@@ -6,7 +6,7 @@ module.exports = function (cp, logger) {
 	var helper = {};
 
 	// get the marble owner names
-	helper.getMarbleUsernames = function () {
+	helper.getMarbleUsernamesConfig = function () {
 		return cp.getMarblesField('usernames');
 	};
 

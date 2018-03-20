@@ -11,7 +11,7 @@
 
 			br
 			p.centerText
-				span.chooseTxt How should we start?
+				span.chooseTxt How should we setup?
 
 				br
 
@@ -38,7 +38,7 @@
 				#failedSetup.warningWrap
 					p
 						span.fa.fa-bug &nbsp;&nbsp;&nbsp;
-						span Boo, there is an issue with the configuration.&nbsp;
+						span Boo, there is an issue with the configuration or network.&nbsp;
 						span Enter the&nbsp;
 						strong Guided
 						spansetup &nbsp;setup to correct it.
@@ -114,7 +114,7 @@
 				span.backgroundMe enrollID
 				span &nbsp;and&nbsp;
 				span.backgroundMe enrollSecret
-				span &nbsp;from your creds file.
+				span &nbsp;from your connection profile.
 				br
 
 			include ./template/loading.pug
@@ -165,7 +165,7 @@
 				span &nbsp;&nbsp;Finding Chaincode
 			.stepDescription
 				span Now we needed to locate the chaincode on your channel.
-				span Your creds file says to check the channel&nbsp;
+				span Your connection profile says to check the channel&nbsp;
 				span.backgroundMe #{bag.creds.channel}
 				span &nbsp;for the chaincode named&nbsp;
 				span.backgroundMe #{bag.creds.chaincode_id}

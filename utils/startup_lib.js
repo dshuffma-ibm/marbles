@@ -73,8 +73,8 @@ module.exports = function (logger, cp, fcw, marbles_lib, ws_server) {
 				logger.warn('Error reading ledger');
 				if (cb) cb(true);
 			} else {
-				if (startup_lib.find_missing_owners(resp)) {						//check if each user in the settings file has been created in the ledger
-					logger.info('We need to make marble owners');					//there are marble owners that do not exist!
+				if (!detectCompany(resp) || startup_lib.find_missing_owners(resp)) {	//check if each user in the settings file has been created in the ledger
+					logger.info('We need to make marble owners');						//there are marble owners that do not exist!
 					ws_server.record_state('register_owners', 'waiting');
 					ws_server.broadcast_state();
 					if (cb) cb(true);
@@ -87,6 +87,21 @@ module.exports = function (logger, cp, fcw, marbles_lib, ws_server) {
 			}
 		});
 	};
+
+	// Detect if we have created users for this company yet
+	function detectCompany(data) {
+		if (data && data.parsed) {
+			for (let i in data.parsed.owners) {
+				if (data.parsed.owners[i].company === process.env.marble_company) {
+					logger.debug('This company has registered marble owners');
+					return true;
+				}
+			}
+		}
+
+		logger.debug('This company has not registered marble owners');
+		return false;
+	}
 
 	// Detect if there are marble usernames in the settings doc that are not in the ledger
 	startup_lib.find_missing_owners = function (resp) {
@@ -126,7 +141,8 @@ module.exports = function (logger, cp, fcw, marbles_lib, ws_server) {
 
 		marbles_lib.check_if_already_instantiated(options, function (not_instantiated, enrollUser) {
 			if (not_instantiated) {									// if this is truthy we have not yet instantiated.... error
-				if (cc_detect_attempt <= 40 && not_instantiated.indexOf('premature execution') >= 0) {
+				console.log('debug', typeof not_instantiated, not_instantiated);
+				if (cc_detect_attempt <= 40 && typeof not_instantiated === 'string' && not_instantiated.indexOf('premature execution') >= 0) {
 					console.log('');
 					logger.debug('Chaincode is still starting! this can take a minute or two.  I\'ll check again in a moment.', cc_detect_attempt);
 					ws_server.record_state('find_chaincode', 'polling');

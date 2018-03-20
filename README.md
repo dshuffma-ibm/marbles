@@ -364,7 +364,7 @@ __/utils/websocket_server_side.js__
 ```js
     //process web socket messages
     ws_server.process_msg = function (ws, data) {
-        const channel = cp.getFirstChannelId();
+        const channel = cp.getChannelId();
         const first_peer = cp.getFirstPeerName(channel);
         var options = {
             peer_urls: [cp.getPeersUrl(first_peer)],

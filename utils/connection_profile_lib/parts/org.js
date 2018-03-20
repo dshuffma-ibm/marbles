@@ -6,6 +6,7 @@ var path = require('path');
 
 module.exports = function (cp, logger) {
 	var helper = {};
+	var misc = require('../../misc.js')(logger);												// mis.js has generic (non-blockchain) related functions
 
 	// find the first org name in the organization field
 	helper.getFirstOrg = function () {
@@ -17,6 +18,15 @@ module.exports = function (cp, logger) {
 		}
 		logger.error('Org not found.');
 		return null;
+	};
+
+	// get the org name from the cp or config file
+	helper.getClientsOrgName = function () {
+		if (cp.creds && cp.creds.client && cp.creds.client['x-organizationName']) {
+			return misc.saferCompanyNames(cp.creds.client['x-organizationName']);
+		} else {
+			return misc.saferCompanyNames(cp.getCompanyNameFromFile());				//fallback
+		}
 	};
 
 	// find the org name in the client field

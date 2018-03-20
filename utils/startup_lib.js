@@ -58,9 +58,10 @@ module.exports = function (logger, cp, fcw, marbles_lib, ws_server) {
 	// Wait for the user to help correct the config file so we can startup!
 	startup_lib.startup_unsuccessful = function (host, port) {
 		process.env.app_first_setup = 'yes';
-		console.log('');
+		console.log('\n\n- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -');
 		logger.info('Detected that we have NOT launched successfully yet');
-		logger.debug('Open your browser to http://' + host + ':' + port + ' and login as "admin" to initiate startup\n\n');
+		logger.debug('Open your browser to http://' + host + ':' + port + ' and login as "admin" to initiate startup');
+		console.log('- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n\n');
 		// we wait here for the user to go the browser, then setup_marbles_lib() will be called from WS msg
 	};
 
@@ -117,7 +118,7 @@ module.exports = function (logger, cp, fcw, marbles_lib, ws_server) {
 		ws_server.setup(null, marbles_lib);
 
 		logger.debug('Checking if chaincode is already instantiated or not');
-		const channel = cp.getFirstChannelId();
+		const channel = cp.getChannelId();
 		const first_peer = cp.getFirstPeerName(channel);
 		var options = {
 			peer_urls: [cp.getPeersUrl(first_peer)],
@@ -131,7 +132,7 @@ module.exports = function (logger, cp, fcw, marbles_lib, ws_server) {
 				ws_server.record_state('find_chaincode', 'failed');
 				ws_server.broadcast_state();
 			} else {													//else we already instantiated
-				console.log('\n----------------------------- Chaincode found on channel "' + cp.getFirstChannelId() + '" -----------------------------\n');
+				console.log('\n----------------------------- Chaincode found on channel "' + cp.getChannelId() + '" -----------------------------\n');
 
 				// --- Check Chaincode Compatibility  --- //
 				marbles_lib.check_version(options, function (err, resp) {
@@ -220,7 +221,7 @@ module.exports = function (logger, cp, fcw, marbles_lib, ws_server) {
 
 	// Create the marble owner
 	startup_lib.create_owners = function (attempt, username, cb) {
-		const channel = cp.getFirstChannelId();
+		const channel = cp.getChannelId();
 		const first_peer = cp.getFirstPeerName(channel);
 		var options = {
 			peer_urls: [cp.getPeersUrl(first_peer)],
@@ -244,7 +245,7 @@ module.exports = function (logger, cp, fcw, marbles_lib, ws_server) {
 	// Create 1 marble
 	startup_lib.create_marbles = function (owner_id, username, cb) {
 		var randOptions = startup_lib.build_marble_options(owner_id, username, process.env.marble_company);
-		const channel = cp.getFirstChannelId();
+		const channel = cp.getChannelId();
 		const first_peer = cp.getFirstPeerName(channel);
 		console.log('');
 		logger.debug('[startup] going to create marble:', randOptions);

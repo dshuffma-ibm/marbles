@@ -35,8 +35,10 @@ stages:
 
       export VCAP_KEY_NAME="marbles_tc_creds"
       export CHANNEL_ID="defaultchannel"
-      export TIMESTAMP=$(date +%s)
+      export CHAINCODE_ID="marbles_sample"
+      #export TIMESTAMP=$(date +%s)
       export APP_URL="unknown_yet"                    # we correct this later
+      GIT_CC_HASH=$(git ls-tree --abbrev=12 HEAD ./chaincode/src/marbles | cut -d ' ' -f 3 | cut -f 1)
       GIT_HASH=$(git rev-parse HEAD)
 
       detect_exit()
@@ -58,7 +60,7 @@ stages:
 
       update_status()
       {
-        echo "Updating Sample's Deployment Status - network id: '${NETWORK_ID}', app: '$CF_APP', status: '$COMPLETED_STEP'"
+        printf "\nUpdating Sample's Deployment Status - network id: '${NETWORK_ID}', app: '$CF_APP', status: '$COMPLETED_STEP'\n"
         curl -X PUT -s -S\
           "$API_HOST/api/v1/networks/$NETWORK_ID/sample/marbles" \
           -H 'Cache-Control: no-cache' \
@@ -100,10 +102,6 @@ stages:
         echo "Error - bad script setup - CF_APP was not provided (Marbles application name)"
         export SCRIPT_ERROR="yep"
       fi
-      if [ "$CHANNEL_ID" == "" ]; then
-        echo "Error - bad script setup - CHANNEL_ID was not provided (name of the channel to use)"
-        export SCRIPT_ERROR="yep"
-      fi
       if [ "$MSP_ID" == "" ]; then
         echo "Error - bad script setup - MSP_ID was not provided (id of the org on the network to use)"
         export SCRIPT_ERROR="yep"
@@ -143,8 +141,10 @@ stages:
       # -----------------------------------------------------------
       # 2. Install the chaincode
       # -----------------------------------------------------------
-      printf "\n\n --- Installing chaincode ---\n\n"
-      curl -X POST \
+      printf "\n\n --- Installing chaincode ---\n"
+      echo "Chaincode ID: ${CHAINCODE_ID}"
+      printf "Chaincode Version: ${GIT_CC_HASH}\n\n"
+      INSTALL_RESP=$(curl -X POST \
         "$API_HOST/api/v1/networks/$NETWORK_ID/chaincode/install" \
         -H 'Cache-Control: no-cache' \
         -H 'content-type: multipart/form-data;' \
@@ -153,9 +153,23 @@ stages:
         -F 'files[]=@./chaincode/src/marbles/marbles.go' \
         -F 'files[]=@./chaincode/src/marbles/read_ledger.go' \
         -F 'files[]=@./chaincode/src/marbles/write_ledger.go' \
-        -F chaincode_id=$CF_APP \
-        -F chaincode_version=$TIMESTAMP \
-        --connect-timeout 60
+        -F chaincode_id=$CHAINCODE_ID \
+        -F chaincode_version=$GIT_CC_HASH \
+        --connect-timeout 60 || true)
+      printf "\nResp: $INSTALL_RESP\n"
+      INSTALLED=$(echo "$INSTALL_RESP" | jq '.message' -r || true)    # parse the install response for the "message" field
+
+      if [ "$INSTALLED" != "ok" ]; then
+        if [[ $INSTALL_RESP = *"exists))"* ]]; then                            # this is ok
+          echo "Chaincode is already installed, good to go"
+        else                                                                   # this is a problem
+          echo "Could not install the chaincode... check log above and your peer's logs"
+          exit 1;
+        fi
+      else
+        echo "Install was successful, woo"                                     # this is ok
+      fi
+
       export COMPLETED_STEP="2"
       update_status
 
@@ -163,7 +177,7 @@ stages:
       # 3. Instantiate the chaincode - repeat 3x if needed
       # -----------------------------------------------------------
       i=0
-      while [[ "$INSTANTIATED" != "ok" && "$i" -lt "3" ]]
+      while [[ "$INSTANTIATED" != "ok" && "$i" -lt "3" && $INSTANTIATE_RESP != *"version already exists for chaincode"* ]]
       do
         printf "\n\n --- Instantiating chaincode on channel $CHANNEL_ID (attempt $[$i+1]) ---\n\n"
         sleep $[$i*6+1]s
@@ -172,19 +186,22 @@ stages:
           -H 'Cache-Control: no-cache' \
           -H 'Content-Type: application/json' \
           -u $API_KEY:$API_SECRET \
-          -d '{"chaincode_id":"'"$CF_APP"'", "chaincode_version":"'"$TIMESTAMP"'", "chaincode_arguments":"[\"12345\"]"}' \
-          --connect-timeout 180)
-        echo "$INSTANTIATE_RESP"
-        INSTANTIATED=$(echo "$INSTANTIATE_RESP" | jq '.message' -r || true)
+          -d '{"chaincode_id":"'"$CHAINCODE_ID"'", "chaincode_version":"'"$GIT_CC_HASH"'", "chaincode_arguments":"[\"12345\"]"}' \
+          --connect-timeout 180 || true)
+        printf "\nResp: $INSTANTIATE_RESP\n"
+        INSTANTIATED=$(echo "$INSTANTIATE_RESP" | jq '.message' -r || true)  # parse the instantiate response for the "message" field
         i=$[$i+1]
       done
 
       if [ "$INSTANTIATED" != "ok" ]; then
-        echo "$INSTANTIATE_RESP"
-        echo "Could not instantiate the chaincode... check peer logs"
-        exit 1;
+        if [[ $INSTANTIATE_RESP = *"version already exists for chaincode"* ]]; then   # this is ok
+          echo "Chaincode is already instantiated, good to go"
+        else                                                                          # this is a problem
+          echo "Could not instantiate the chaincode... check log above and your peer's logs"
+          exit 1;
+        fi
       else
-        echo "Instantiate was successful, congrats"
+        echo "Instantiate was successful, congrats"                                   # this is ok
       fi
 
       export COMPLETED_STEP="3"
@@ -226,8 +243,8 @@ stages:
 
       echo "Creating env variables for mables..."
       cf set-env $CF_APP CONNECTION_PROFILE "$CONNECTION_PROFILE" > /dev/null
-      cf set-env $CF_APP CHAINCODE_ID $CF_APP               # pass these to the app so we know which one to use
-      cf set-env $CF_APP CHAINCODE_VERSION $TIMESTAMP
+      cf set-env $CF_APP CHAINCODE_ID $CHAINCODE_ID               # pass these to the app so we know which one to use
+      cf set-env $CF_APP CHAINCODE_VERSION $GIT_CC_HASH
       cf set-env $CF_APP CHANNEL_ID $CHANNEL_ID
       cf set-env $CF_APP MSP_ID $MSP_ID
       export APP_URL=$(cf app $CF_APP | grep -Po "(?<=routes:)\s*\S*")

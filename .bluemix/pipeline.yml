@@ -174,8 +174,8 @@ stages:
           -u $API_KEY:$API_SECRET \
           -d '{"chaincode_id":"'"$CF_APP"'", "chaincode_version":"'"$TIMESTAMP"'", "chaincode_arguments":"[\"12345\"]"}' \
           --connect-timeout 180)
-        echo "$INSTANTIATE_RESP" | jq . || true
-        INSTANTIATED=$(echo "$INSTANTIATE_RESP" | jq '.message' -r)
+        echo "$INSTANTIATE_RESP"
+        INSTANTIATED=$(echo "$INSTANTIATE_RESP" | jq '.message' -r || true)
         i=$[$i+1]
       done
 

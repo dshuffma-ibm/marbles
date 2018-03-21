@@ -13,6 +13,8 @@ var path = require('path');
 module.exports = function (config_filename, logger) {
 	var cp = {};
 	var detect_env = require('./parts/detect_env.js')(logger);
+	var misc = require('../misc.js')(logger);
+
 	if (!config_filename) {
 		config_filename = 'marbles_tls.json';										// default config file name
 	}
@@ -95,13 +97,6 @@ module.exports = function (config_filename, logger) {
 		}
 	};
 
-	// make a unique id for the sample & channel & peer
-	cp.makeUniqueId = function () {
-		const channel = cp.getChannelId();
-		const first_peer = cp.getFirstPeerName(channel);
-		return 'marbles-' + cp.getNetworkName() + '-' + channel + '-' + first_peer;
-	};
-
 	// load cert from file path OR just pass cert back
 	cp.loadPem = function (obj) {
 		if (obj && obj.path) {											// looks like field is a path to a file
@@ -163,6 +158,15 @@ module.exports = function (config_filename, logger) {
 	// --------------------------------------------------------------------------------
 	// Build CP Options
 	// --------------------------------------------------------------------------------
+	// make a unique id for the sample & channel & org & peer
+	cp.makeUniqueId = function () {
+		const net_name = cp.getNetworkName();
+		const channel = cp.getChannelId();
+		const org = cp.getClientOrg();
+		const first_peer = cp.getFirstPeerName(channel);
+		return misc.saferString('marbles-' + net_name + channel + org + first_peer);
+	};
+
 	// build the marbles lib module options
 	cp.makeMarblesLibOptions = function () {
 		const channel = cp.getChannelId();

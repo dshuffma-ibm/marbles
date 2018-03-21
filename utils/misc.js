@@ -64,8 +64,17 @@ module.exports = function (logger) {
 	misc.saferNames = function (usernames) {
 		var ret = [];
 		for (var i in usernames) {
-			var name = usernames[i].replace(/\W+/g, '');				// names should not contain many things...
+			var name = usernames[i].replace(/\W+/g, '');	// names should not contain many things...
 			if (name !== '') ret.push(name.toLowerCase());
+		}
+		return ret;
+	};
+
+	// Sanitize string for filesystem
+	misc.saferString = function (str) {
+		let ret = '';
+		if (str && typeof str === 'string') {
+			ret = str.replace(/\W+/g, '');
 		}
 		return ret;
 	};
